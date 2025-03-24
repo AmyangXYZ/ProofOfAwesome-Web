@@ -1,7 +1,14 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from "next"
 
 const nextConfig: NextConfig = {
-  /* config options here */
-};
+  devIndicators: false,
+  webpack: (config) => {
+    config.experiments = {
+      asyncWebAssembly: true,
+      layers: true,
+    }
+    return config
+  },
+}
 
-export default nextConfig;
+export default nextConfig
