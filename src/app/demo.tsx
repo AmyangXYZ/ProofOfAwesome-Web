@@ -37,6 +37,10 @@ export default function Demo() {
     }
   }, [])
 
+  useEffect(() => {
+    console.log(user)
+  }, [user])
+
   return (
     <Box
       sx={{
