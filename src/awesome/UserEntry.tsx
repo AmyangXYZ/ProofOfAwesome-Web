@@ -147,10 +147,13 @@ export default function UserEntry({
 
   return (
     <View
-      title="Join the Network"
+      title="Join the Awesome Network"
       content={
         <Box sx={{ flex: 1 }}>
-          <Stack spacing={3} sx={{ flex: 1 }}>
+          <Typography variant="body2" sx={{ fontWeight: "bold", textAlign: "center", mt: -2, mb: 4, px: 5 }}>
+            Turn your real-world awesome into AI-verified blockchain proof
+          </Typography>
+          <Stack spacing={2} sx={{ flex: 1 }}>
             <ToggleButtonGroup
               value={mode}
               exclusive
@@ -249,6 +252,10 @@ export default function UserEntry({
                         </Tooltip>
                       )}
                     </Stack>
+                    <Typography variant="caption" sx={{ textAlign: "center", color: "text.secondary", px: 4 }}>
+                      Write down your mnemonic phrase and store it in a safe place. This is the only way to access and
+                      recover your account.
+                    </Typography>
                   </Box>
                 ) : (
                   <Button

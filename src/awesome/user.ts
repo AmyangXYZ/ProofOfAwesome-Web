@@ -42,14 +42,18 @@ export class User {
     if (!this.wallet) {
       throw new Error("Wallet not created")
     }
-    const derivationPath = `m/44'/777'/0'/0/0`
-    const chainKey = this.wallet.derivePath(derivationPath)
+    if (!this.addresses[chainUuid]) {
+      const derivationPath = `m/44'/777'/0'/0/0`
+      const chainKey = this.wallet.derivePath(derivationPath)
 
-    const publicKeyBuffer = Buffer.from(chainKey.publicKey)
-    const chainUuidBuffer = Buffer.from(chainUuid)
+      const publicKeyBuffer = Buffer.from(chainKey.publicKey)
+      const chainUuidBuffer = Buffer.from(chainUuid)
 
-    const hash = sha256(Buffer.concat([publicKeyBuffer, chainUuidBuffer]))
-    return `${hash.substring(0, 40)}`
+      const hash = sha256(Buffer.concat([publicKeyBuffer, chainUuidBuffer]))
+      const address = `${hash.substring(0, 40)}`
+      this.addresses[chainUuid] = address
+    }
+    return this.addresses[chainUuid]
   }
 
   public joinChain(chainBrief: ChainBrief): void {

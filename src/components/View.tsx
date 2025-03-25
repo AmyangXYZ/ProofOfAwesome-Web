@@ -1,13 +1,12 @@
-import { Box } from "@mui/material"
+import { Box, Typography } from "@mui/material"
 import { ReactNode } from "react"
-import { Typography } from "@mui/material"
 
-function View({ title, content, footer }: { title: string; content: ReactNode; footer?: ReactNode }) {
+function View({ title, content, footer }: { title?: string; content: ReactNode; footer?: ReactNode }) {
   return (
     <Box
       sx={{
         width: { xs: "100%", sm: "600px", md: "800px" },
-        height: "calc(100vh - 10rem)",
+        height: footer ? "calc(100dvh - 40px - 40px - 48px - 10px)" : "calc(100dvh - 40px - 40px - 10px)",
         display: "flex",
         flexDirection: "column",
         position: "fixed",
@@ -20,23 +19,21 @@ function View({ title, content, footer }: { title: string; content: ReactNode; f
         right: { xs: 0, sm: "auto" },
       }}
     >
-      <Box sx={{ flex: 1, px: { xs: 3, sm: 4 }, maxWidth: "100%", overflow: "auto", wordBreak: "break-word" }}>
-        <Box sx={{ display: "flex", justifyContent: "center", mt: { xs: 1, sm: 2 }, mb: { xs: 3, sm: 5 } }}>
-          <Typography variant="h5" sx={{ fontWeight: "bold" }}>
+      <Box sx={{ flex: 1, px: { xs: 2, sm: 4 }, maxWidth: "100%", overflow: "auto", wordBreak: "break-word" }}>
+        {title && (
+          <Typography variant="h5" sx={{ fontWeight: "bold", textAlign: "center", mt: 1, mb: 4 }}>
             {title}
           </Typography>
-        </Box>
+        )}
         {content}
       </Box>
 
       {footer && (
         <Box
           sx={{
-            py: 2,
             position: "fixed",
-            maxHeight: "40px",
+            height: "40px",
             bottom: "48px",
-            height: "72px",
             left: { xs: 0, sm: "auto", md: "calc(50% - 300px)" },
             right: 0,
             width: { xs: "100%", sm: "400px", md: "600px" },

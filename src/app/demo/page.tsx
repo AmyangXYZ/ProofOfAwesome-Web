@@ -4,7 +4,7 @@ import { Socket } from "@/awesome/api"
 import { User } from "@/awesome/user"
 import UserEntry from "@/awesome/UserEntry"
 import Dashboard from "@/awesome/Dashboard"
-import { Favorite, Menu, Notifications, Person, Phone } from "@mui/icons-material"
+import { CurrencyBitcoin, DashboardSharp, ExploreOutlined, Menu, Notifications, Person } from "@mui/icons-material"
 import { Box, IconButton, Stack, Tab, Tabs } from "@mui/material"
 import { useEffect, useState } from "react"
 import { io } from "socket.io-client"
@@ -89,9 +89,9 @@ export default function Demo() {
                 backgroundColor: "black",
               }}
             >
-              <Tab icon={<Phone />} sx={{ "&.Mui-selected": { color: "white" } }} />
-              <Tab icon={<Favorite />} sx={{ "&.Mui-selected": { color: "white" } }} />
-              <Tab icon={<Person />} sx={{ "&.Mui-selected": { color: "white" } }} />
+              <Tab icon={<DashboardSharp />} sx={{ "&.Mui-selected": { color: "white" } }} />
+              <Tab icon={<ExploreOutlined />} sx={{ "&.Mui-selected": { color: "white" } }} />
+              <Tab icon={<CurrencyBitcoin />} sx={{ "&.Mui-selected": { color: "white" } }} />
             </Tabs>
           </Box>
         </>
