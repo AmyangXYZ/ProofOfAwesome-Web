@@ -1,5 +1,4 @@
 import { Box, Typography, Button } from "@mui/material"
-import Demo from "@/app/demo"
 
 export default function Home() {
   return (
@@ -39,7 +38,7 @@ export default function Home() {
         </Typography>
 
         <Button
-          href="#demo"
+          href="/demo"
           variant="contained"
           size="large"
           sx={{
@@ -52,10 +51,6 @@ export default function Home() {
         >
           Try it online
         </Button>
-      </Box>
-
-      <Box id="demo" sx={{ minHeight: "100vh" }}>
-        <Demo />
       </Box>
     </Box>
   )

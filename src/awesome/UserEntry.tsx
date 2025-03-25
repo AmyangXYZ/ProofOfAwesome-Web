@@ -26,7 +26,15 @@ import {
 import { User } from "@/awesome/user"
 import { Socket, ChainBrief, Membership, UserInfo } from "@/awesome/api"
 
-export default function UserEntry({ socket, setUser }: { socket: Socket; setUser: (user: User | null) => void }) {
+export default function UserEntry({
+  socket,
+  setUser,
+  setIsOnboarded,
+}: {
+  socket: Socket
+  setUser: (user: User | null) => void
+  setIsOnboarded: (isOnboarded: boolean) => void
+}) {
   const [mode, setMode] = useState<"new" | "existing">("new")
   const [generatedMnemonic, setGeneratedMnemonic] = useState("")
   const [inputMnemonic, setInputMnemonic] = useState("")
@@ -44,6 +52,7 @@ export default function UserEntry({ socket, setUser }: { socket: Socket; setUser
       userRef.current = null
 
       resetForm()
+      setIsOnboarded(true)
       socket.emit("get public chains")
     })
 
@@ -60,6 +69,7 @@ export default function UserEntry({ socket, setUser }: { socket: Socket; setUser
 
         setUser(userRef.current)
         userRef.current = null
+        setIsOnboarded(true)
         resetForm()
       }
     )
@@ -74,7 +84,7 @@ export default function UserEntry({ socket, setUser }: { socket: Socket; setUser
       socket.off("sign in success")
       socket.off("sign in error")
     }
-  }, [socket, setUser])
+  }, [socket, setUser, setIsOnboarded])
 
   useEffect(() => {
     if (inputMnemonic.length > 0) {
@@ -85,6 +95,12 @@ export default function UserEntry({ socket, setUser }: { socket: Socket; setUser
       }
     }
   }, [inputMnemonic])
+
+  useEffect(() => {
+    if (passphrase.length > 0) {
+      setGeneratedMnemonic(generateMnemonic())
+    }
+  }, [passphrase])
 
   const resetForm = () => {
     setUsername("")
@@ -129,76 +145,86 @@ export default function UserEntry({ socket, setUser }: { socket: Socket; setUser
   return (
     <Box
       sx={{
-        width: { xs: "80%", sm: "720px", md: "960px" },
+        width: { xs: "100%", sm: "400px", md: "600px" },
         height: "100vh",
         display: "flex",
         flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        px: { xs: 2, sm: 0 },
+        position: "fixed",
+        top: 50,
+        left: {
+          xs: 0,
+          sm: "calc(50% - 200px)",
+          md: "calc(50% - 300px)",
+        },
+        right: { xs: 0, sm: "auto" },
+        bottom: 0,
       }}
     >
       <Box
         sx={{
-          width: "100%",
-          maxWidth: "400px",
-          height: "480px",
+          px: { xs: 3, sm: 4 },
+          flex: 1,
           display: "flex",
           flexDirection: "column",
-          bgcolor: "background.paper",
-          borderRadius: 2,
-          boxShadow: "0 8px 32px rgba(0, 0, 0, 0.08)",
-          p: 4,
         }}
       >
-        <Box>
-          <Typography variant="h5" sx={{ textAlign: "center", fontWeight: 500, mb: 3 }}>
-            User Authentication
+        {/* Content Header */}
+        <Box sx={{ display: "flex", justifyContent: "center", mt: 3, mb: 8 }}>
+          <Typography variant="h5" sx={{ color: "rgba(255, 255, 255, 0.95)" }}>
+            Join the Network
           </Typography>
-
-          <ToggleButtonGroup
-            value={mode}
-            exclusive
-            onChange={(_, newMode) => {
-              if (newMode !== null) {
-                setMode(newMode)
-                resetForm()
-              }
-            }}
-            sx={{
-              width: "100%",
-              mb: 4,
-              "& .MuiToggleButton-root": {
-                border: "none",
-                borderRadius: 1.5,
-                textTransform: "none",
-                fontSize: "0.95rem",
-                py: 1,
-              },
-            }}
-          >
-            <ToggleButton value="new" sx={{ flex: 1 }}>
-              New User
-            </ToggleButton>
-            <ToggleButton value="existing" sx={{ flex: 1 }}>
-              Existing User
-            </ToggleButton>
-          </ToggleButtonGroup>
         </Box>
 
+        {/* Main Content */}
         <Box sx={{ flex: 1 }}>
-          <Stack spacing={2}>
+          <Stack spacing={3} sx={{ flex: 1 }}>
+            <ToggleButtonGroup
+              value={mode}
+              exclusive
+              onChange={(_, newMode) => {
+                if (newMode !== null) {
+                  setMode(newMode)
+                  resetForm()
+                }
+              }}
+              sx={{
+                width: "100%",
+                "& .MuiToggleButton-root": {
+                  border: "none",
+                  py: 1,
+
+                  color: "rgba(255, 255, 255, 0.87)",
+                  "&.Mui-selected": {
+                    backgroundColor: "rgba(0, 255, 255, 0.15)",
+                    color: "rgba(0, 255, 255, 0.9)",
+                    "&:hover": {
+                      backgroundColor: "rgba(0, 255, 255, 0.25)",
+                    },
+                  },
+                  "&:hover": {
+                    color: "rgba(0, 255, 255, 0.9)",
+                  },
+                },
+              }}
+            >
+              <ToggleButton value="new" sx={{ flex: 1 }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
+                  New User
+                </Typography>
+              </ToggleButton>
+              <ToggleButton value="existing" sx={{ flex: 1 }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
+                  Existing User
+                </Typography>
+              </ToggleButton>
+            </ToggleButtonGroup>
+
             <TextField
               size="small"
               label="Username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               fullWidth
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: 1.5,
-                },
-              }}
             />
 
             <TextField
@@ -219,127 +245,50 @@ export default function UserEntry({ socket, setUser }: { socket: Socket; setUser
                   ),
                 },
               }}
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: 1.5,
-                },
-              }}
             />
 
             {mode === "new" ? (
               <>
                 {generatedMnemonic.length > 0 ? (
-                  <>
-                    <Box sx={{ height: 0 }} />
-
+                  <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
                     <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                      <Stack direction="row" alignItems="center">
-                        <Box sx={{ display: "flex", gap: 1, flex: 1, justifyContent: "space-between" }}>
+                      {[0, 4, 8].map((start) => (
+                        <Stack key={start} direction="row" spacing={1}>
                           {generatedMnemonic
                             .split(" ")
-                            .slice(0, 4)
+                            .slice(start, start + 4)
                             .map((word, i) => (
-                              <Chip
-                                key={i}
-                                label={word}
-                                size="small"
-                                sx={{
-                                  width: "70px",
-                                }}
-                              />
+                              <Chip key={i + start} label={word} size="small" sx={{ flex: 1 }} />
                             ))}
-                        </Box>
-                      </Stack>
-                      <Stack direction="row" alignItems="center">
-                        <Box sx={{ display: "flex", gap: 1, flex: 1, justifyContent: "space-between" }}>
-                          {generatedMnemonic
-                            .split(" ")
-                            .slice(4, 8)
-                            .map((word, i) => (
-                              <Chip
-                                key={i + 4}
-                                label={word}
-                                size="small"
-                                sx={{
-                                  width: "70px",
-                                }}
-                              />
-                            ))}
-                        </Box>
-                      </Stack>
-                      <Stack direction="row" alignItems="center">
-                        <Box sx={{ display: "flex", gap: 1, flex: 1, justifyContent: "space-between" }}>
-                          {generatedMnemonic
-                            .split(" ")
-                            .slice(8, 12)
-                            .map((word, i) => (
-                              <Chip
-                                key={i + 8}
-                                label={word}
-                                size="small"
-                                sx={{
-                                  width: "70px",
-                                }}
-                              />
-                            ))}
-                        </Box>
-                      </Stack>
+                        </Stack>
+                      ))}
                     </Box>
-                    <Stack direction="row" spacing={1} alignItems="center" justifyContent="center">
-                      <IconButton
-                        onClick={() => setGeneratedMnemonic(generateMnemonic())}
-                        sx={{
-                          bgcolor: "action.hover",
-                          "&:hover": {
-                            bgcolor: "action.selected",
-                          },
-                        }}
-                      >
-                        <Refresh sx={{ fontSize: "20px" }} />
+                    <Stack direction="row" spacing={1} justifyContent="center">
+                      <IconButton onClick={() => setGeneratedMnemonic(generateMnemonic())}>
+                        <Refresh />
                       </IconButton>
                       {!mnemonicCopied ? (
-                        <IconButton
-                          onClick={handleCopyMnemonic}
-                          sx={{
-                            bgcolor: "action.hover",
-                            "&:hover": {
-                              bgcolor: "action.selected",
-                            },
-                          }}
-                        >
-                          <ContentCopy sx={{ fontSize: "18px" }} />
+                        <IconButton onClick={handleCopyMnemonic}>
+                          <ContentCopy sx={{ fontSize: "1.15rem" }} />
                         </IconButton>
                       ) : (
                         <Tooltip title="Mnemonic copied" open={mnemonicCopied}>
-                          <IconButton
-                            sx={{
-                              bgcolor: "action.hover",
-                              "&:hover": {
-                                bgcolor: "action.selected",
-                              },
-                            }}
-                          >
-                            <CheckCircle sx={{ fontSize: "18px" }} />
+                          <IconButton>
+                            <CheckCircle />
                           </IconButton>
                         </Tooltip>
                       )}
                     </Stack>
-                  </>
+                  </Box>
                 ) : (
                   <Button
                     variant="outlined"
-                    color="primary"
-                    onClick={() => setGeneratedMnemonic(generateMnemonic())}
                     startIcon={<Key />}
+                    onClick={() => setGeneratedMnemonic(generateMnemonic())}
                     fullWidth
-                    sx={{
-                      borderRadius: 1.5,
-                      py: 1,
-                      textTransform: "none",
-                      fontSize: "0.95rem",
-                    }}
+                    sx={{ textTransform: "none" }}
                   >
-                    Generate Mnemonic
+                    <Typography variant="body1">Generate Mnemonic</Typography>
                   </Button>
                 )}
               </>
@@ -353,42 +302,44 @@ export default function UserEntry({ socket, setUser }: { socket: Socket; setUser
                 value={inputMnemonic}
                 onChange={(e) => setInputMnemonic(e.target.value)}
                 fullWidth
-                sx={{
-                  "& .MuiOutlinedInput-root": {
-                    borderRadius: 1.5,
-                  },
-                }}
               />
             )}
           </Stack>
         </Box>
+      </Box>
 
-        <Box sx={{ mt: 2 }}>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleSubmit}
-            disabled={
-              !username ||
-              (mode === "new" && (!passphrase || !generatedMnemonic)) ||
-              (mode === "existing" && (!inputMnemonic || error !== null))
-            }
-            startIcon={mode === "new" ? <PersonAdd /> : <Login />}
-            fullWidth
-            sx={{
-              borderRadius: 1.5,
-              py: 1,
-              textTransform: "none",
-              fontSize: "0.95rem",
-              boxShadow: "none",
-              "&:hover": {
-                boxShadow: "none",
-              },
-            }}
-          >
-            {mode === "new" ? "Register" : "Sign In"}
-          </Button>
-        </Box>
+      {/* Fixed Footer */}
+      <Box
+        sx={{
+          py: 3,
+          display: "flex",
+          position: "fixed",
+          bottom: 0,
+          left: { xs: 0, sm: "auto", md: "calc(50% - 300px)" },
+          right: 0,
+          width: { xs: "100%", sm: "400px", md: "600px" },
+          justifyContent: "center",
+          zIndex: 1,
+        }}
+      >
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={handleSubmit}
+          disabled={
+            !username ||
+            (mode === "new" && generatedMnemonic.length === 0) ||
+            (mode === "existing" && (!inputMnemonic || error !== null))
+          }
+          startIcon={mode === "new" ? <PersonAdd /> : <Login />}
+          sx={{
+            py: 1.5,
+
+            width: "80%",
+          }}
+        >
+          {mode === "new" ? "Register" : "Sign In"}
+        </Button>
       </Box>
     </Box>
   )

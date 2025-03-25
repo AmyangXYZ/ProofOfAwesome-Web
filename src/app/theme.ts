@@ -9,8 +9,8 @@ const theme = createTheme({
   palette: {
     mode: "dark",
     background: {
-      default: "#0f1116",
-      paper: "#0f1116",
+      default: "#101214",
+      paper: "#101214",
     },
   },
 })

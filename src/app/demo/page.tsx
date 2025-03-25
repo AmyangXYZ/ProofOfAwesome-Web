@@ -3,7 +3,8 @@
 import { Socket } from "@/awesome/api"
 import { User } from "@/awesome/user"
 import UserEntry from "@/awesome/UserEntry"
-import { Box } from "@mui/material"
+import { Menu } from "@mui/icons-material"
+import { Box, IconButton, Link } from "@mui/material"
 import { Typography } from "@mui/material"
 import { useEffect, useState } from "react"
 import { io } from "socket.io-client"
@@ -11,6 +12,7 @@ import { io } from "socket.io-client"
 export default function Demo() {
   const [user, setUser] = useState<User | null>(null)
   const [socket, setSocket] = useState<Socket | null>(null)
+  const [isOnboarded, setIsOnboarded] = useState<boolean>(false)
   const [socketError, setSocketError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -42,16 +44,29 @@ export default function Demo() {
   }, [user])
 
   return (
-    <Box
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        height: "100vh",
-        width: "100%",
-      }}
-    >
+    <Box>
+      <Box
+        sx={{
+          height: "40px",
+          bgcolor: "background.paper",
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          display: "flex",
+          px: 2,
+          alignItems: "center",
+          justifyContent: "space-between",
+          zIndex: 1000,
+        }}
+      >
+        <Link href="/">
+          <Box component="img" src="/logo.png" alt="Proof of Awesome" sx={{ height: 32, mt: 0.8 }} />
+        </Link>
+        <IconButton>
+          <Menu />
+        </IconButton>
+      </Box>
       {socketError && (
         <Box sx={{ mt: 3 }}>
           <Typography variant="h6" color="error">
@@ -59,7 +74,14 @@ export default function Demo() {
           </Typography>
         </Box>
       )}
-      {socket && <UserEntry socket={socket} setUser={setUser} />}
+      {socket &&
+        (!isOnboarded ? (
+          <UserEntry socket={socket} setUser={setUser} setIsOnboarded={setIsOnboarded} />
+        ) : (
+          <Box>
+            <Typography variant="h6">Chain created</Typography>
+          </Box>
+        ))}
     </Box>
   )
 }
