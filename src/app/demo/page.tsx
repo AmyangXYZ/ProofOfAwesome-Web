@@ -70,7 +70,6 @@ export default function Demo() {
           <Box
             sx={{
               position: "fixed",
-              height: "40px",
               bottom: 0,
               left: 0,
               right: 0,
@@ -87,6 +86,7 @@ export default function Demo() {
                 "& .MuiTabs-indicator": {
                   display: "none",
                 },
+                backgroundColor: "black",
               }}
             >
               <Tab icon={<Phone />} sx={{ "&.Mui-selected": { color: "white" } }} />

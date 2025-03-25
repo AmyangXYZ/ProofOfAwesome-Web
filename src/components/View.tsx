@@ -36,11 +36,11 @@ function View({ title, content, footer }: { title: string; content: ReactNode; f
             position: "fixed",
             maxHeight: "40px",
             bottom: "48px",
-
+            height: "72px",
             left: { xs: 0, sm: "auto", md: "calc(50% - 300px)" },
             right: 0,
             width: { xs: "100%", sm: "400px", md: "600px" },
-            zIndex: 1000,
+            zIndex: 1001,
             bgcolor: "black",
             display: "flex",
             justifyContent: "center",
