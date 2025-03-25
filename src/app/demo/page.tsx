@@ -3,9 +3,9 @@
 import { Socket } from "@/awesome/api"
 import { User } from "@/awesome/user"
 import UserEntry from "@/awesome/UserEntry"
-import { Menu, Notifications, Person } from "@mui/icons-material"
-import { Box, IconButton, Stack } from "@mui/material"
-import { Typography } from "@mui/material"
+import Dashboard from "@/awesome/Dashboard"
+import { Favorite, Menu, Notifications, Person, Phone } from "@mui/icons-material"
+import { Box, IconButton, Stack, Tab, Tabs } from "@mui/material"
 import { useEffect, useState } from "react"
 import { io } from "socket.io-client"
 
@@ -13,6 +13,11 @@ export default function Demo() {
   const [user, setUser] = useState<User | null>(null)
   const [socket, setSocket] = useState<Socket | null>(null)
   const [isOnboarded, setIsOnboarded] = useState<boolean>(false)
+  const [tab, setTab] = useState<number>(0)
+
+  useEffect(() => {
+    console.log(isOnboarded)
+  }, [isOnboarded])
 
   useEffect(() => {
     const socket = io("https://api.proof-of-awesome.app")
@@ -28,10 +33,6 @@ export default function Demo() {
       socket.disconnect()
     }
   }, [])
-
-  useEffect(() => {
-    console.log(user)
-  }, [user])
 
   return (
     <Box>
@@ -62,14 +63,39 @@ export default function Demo() {
         </Stack>
       </Box>
 
-      {socket &&
-        (!isOnboarded ? (
-          <UserEntry socket={socket} setUser={setUser} setIsOnboarded={setIsOnboarded} />
-        ) : (
-          <Box>
-            <Typography variant="h6">Chain created</Typography>
+      {socket && !isOnboarded && <UserEntry socket={socket} setUser={setUser} setIsOnboarded={setIsOnboarded} />}
+      {socket && user && isOnboarded && (
+        <>
+          <Dashboard socket={socket} user={user} />
+          <Box
+            sx={{
+              position: "fixed",
+              height: "50px",
+              bottom: 0,
+              left: 0,
+              right: 0,
+              borderColor: "divider",
+              zIndex: 1000,
+            }}
+          >
+            <Tabs
+              value={tab}
+              onChange={(_, newValue) => setTab(newValue)}
+              variant="fullWidth"
+              sx={{
+                height: "48px",
+                "& .MuiTabs-indicator": {
+                  display: "none",
+                },
+              }}
+            >
+              <Tab icon={<Phone />} sx={{ "&.Mui-selected": { color: "white" } }} />
+              <Tab icon={<Favorite />} sx={{ "&.Mui-selected": { color: "white" } }} />
+              <Tab icon={<Person />} sx={{ "&.Mui-selected": { color: "white" } }} />
+            </Tabs>
           </Box>
-        ))}
+        </>
+      )}
     </Box>
   )
 }

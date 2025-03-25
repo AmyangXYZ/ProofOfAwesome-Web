@@ -25,6 +25,7 @@ import {
 } from "@mui/icons-material"
 import { User } from "@/awesome/user"
 import { Socket, ChainBrief, Membership, UserInfo } from "@/awesome/api"
+import View from "@/components/View"
 
 export default function UserEntry({
   socket,
@@ -69,14 +70,16 @@ export default function UserEntry({
 
         setUser(userRef.current)
         userRef.current = null
-        setIsOnboarded(true)
         resetForm()
+        setIsOnboarded(true)
+        socket.emit("get public chains")
       }
     )
 
     socket.on("sign in error", (error: string) => {
       setError(error)
       userRef.current = null
+      setIsOnboarded(false)
     })
 
     return () => {
@@ -112,22 +115,22 @@ export default function UserEntry({
 
   const handleSubmit = () => {
     if (mode === "new") {
-      if (!username || !passphrase || !generatedMnemonic) {
-        setError("Please fill in all fields")
+      const user = new User(username, generatedMnemonic, passphrase)
+      if (!user.createWallet()) {
+        setError("Invalid mnemonic")
         return
       }
-      const user = new User(username, generatedMnemonic, passphrase)
       userRef.current = user
       socket.emit("register", {
         name: user.name,
         publicKey: user.publicKey,
       } satisfies UserInfo)
     } else {
-      if (!username || !inputMnemonic) {
-        setError("Please fill in all fields")
+      const user = new User(username, inputMnemonic, "")
+      if (!user.createWallet()) {
+        setError("Invalid mnemonic")
         return
       }
-      const user = new User(username, inputMnemonic, "")
       userRef.current = user
       socket.emit("sign in", {
         name: user.name,
@@ -143,39 +146,9 @@ export default function UserEntry({
   }
 
   return (
-    <Box
-      sx={{
-        width: { xs: "100%", sm: "400px", md: "600px" },
-        height: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        position: "fixed",
-        top: 50,
-        left: {
-          xs: 0,
-          sm: "calc(50% - 200px)",
-          md: "calc(50% - 300px)",
-        },
-        right: { xs: 0, sm: "auto" },
-        bottom: 0,
-      }}
-    >
-      <Box
-        sx={{
-          px: { xs: 3, sm: 4 },
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-        }}
-      >
-        {/* Content Header */}
-        <Box sx={{ display: "flex", justifyContent: "center", mt: 2, mb: 9 }}>
-          <Typography variant="h5" sx={{ fontWeight: "bold" }}>
-            Join the Network
-          </Typography>
-        </Box>
-
-        {/* Main Content */}
+    <View
+      title="Join the Network"
+      content={
         <Box sx={{ flex: 1 }}>
           <Stack spacing={3} sx={{ flex: 1 }}>
             <ToggleButtonGroup
@@ -303,23 +276,8 @@ export default function UserEntry({
             )}
           </Stack>
         </Box>
-      </Box>
-
-      {/* Fixed Footer */}
-      <Box
-        sx={{
-          py: 1.5,
-          display: "flex",
-          position: "fixed",
-          bottom: 0,
-          left: { xs: 0, sm: "auto", md: "calc(50% - 300px)" },
-          right: 0,
-          width: { xs: "100%", sm: "400px", md: "600px" },
-          justifyContent: "center",
-          zIndex: 1000,
-          background: "black",
-        }}
-      >
+      }
+      footer={
         <Button
           variant="contained"
           onClick={handleSubmit}
@@ -340,7 +298,7 @@ export default function UserEntry({
             {mode === "new" ? "Register" : "Sign In"}
           </Typography>
         </Button>
-      </Box>
-    </Box>
+      }
+    />
   )
 }
