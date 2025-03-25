@@ -9,8 +9,11 @@ const theme = createTheme({
   palette: {
     mode: "dark",
     background: {
-      default: "#101214",
-      paper: "#101214",
+      default: "#000000",
+      paper: "#000000",
+    },
+    text: {
+      primary: "#ffffff",
     },
   },
 })

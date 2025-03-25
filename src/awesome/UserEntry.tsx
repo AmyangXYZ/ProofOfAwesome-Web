@@ -169,8 +169,8 @@ export default function UserEntry({
         }}
       >
         {/* Content Header */}
-        <Box sx={{ display: "flex", justifyContent: "center", mt: 3, mb: 8 }}>
-          <Typography variant="h5" sx={{ color: "rgba(255, 255, 255, 0.95)" }}>
+        <Box sx={{ display: "flex", justifyContent: "center", mt: 2, mb: 9 }}>
+          <Typography variant="h5" sx={{ fontWeight: "bold" }}>
             Join the Network
           </Typography>
         </Box>
@@ -192,17 +192,14 @@ export default function UserEntry({
                 "& .MuiToggleButton-root": {
                   border: "none",
                   py: 1,
-
-                  color: "rgba(255, 255, 255, 0.87)",
+                  borderRadius: 1.5,
+                  color: "text.secondary",
                   "&.Mui-selected": {
                     backgroundColor: "rgba(0, 255, 255, 0.15)",
-                    color: "rgba(0, 255, 255, 0.9)",
+                    color: "text.primary",
                     "&:hover": {
                       backgroundColor: "rgba(0, 255, 255, 0.25)",
                     },
-                  },
-                  "&:hover": {
-                    color: "rgba(0, 255, 255, 0.9)",
                   },
                 },
               }}
@@ -251,7 +248,7 @@ export default function UserEntry({
               <>
                 {generatedMnemonic.length > 0 ? (
                   <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                    <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
                       {[0, 4, 8].map((start) => (
                         <Stack key={start} direction="row" spacing={1}>
                           {generatedMnemonic
@@ -282,13 +279,13 @@ export default function UserEntry({
                   </Box>
                 ) : (
                   <Button
-                    variant="outlined"
+                    variant="contained"
                     startIcon={<Key />}
                     onClick={() => setGeneratedMnemonic(generateMnemonic())}
-                    fullWidth
-                    sx={{ textTransform: "none" }}
+                    color="warning"
+                    sx={{ borderRadius: 8, alignSelf: "center" }}
                   >
-                    <Typography variant="body1">Generate Mnemonic</Typography>
+                    <Typography variant="subtitle2">Generate Mnemonic</Typography>
                   </Button>
                 )}
               </>
@@ -311,7 +308,7 @@ export default function UserEntry({
       {/* Fixed Footer */}
       <Box
         sx={{
-          py: 3,
+          py: 1.5,
           display: "flex",
           position: "fixed",
           bottom: 0,
@@ -319,13 +316,14 @@ export default function UserEntry({
           right: 0,
           width: { xs: "100%", sm: "400px", md: "600px" },
           justifyContent: "center",
-          zIndex: 1,
+          zIndex: 1000,
+          background: "black",
         }}
       >
         <Button
           variant="contained"
-          color="primary"
           onClick={handleSubmit}
+          size="large"
           disabled={
             !username ||
             (mode === "new" && generatedMnemonic.length === 0) ||
@@ -333,12 +331,14 @@ export default function UserEntry({
           }
           startIcon={mode === "new" ? <PersonAdd /> : <Login />}
           sx={{
-            py: 1.5,
-
-            width: "80%",
+            width: "90%",
+            background: "white",
+            borderRadius: 8,
           }}
         >
-          {mode === "new" ? "Register" : "Sign In"}
+          <Typography variant="body1" sx={{ fontWeight: "bold" }}>
+            {mode === "new" ? "Register" : "Sign In"}
+          </Typography>
         </Button>
       </Box>
     </Box>
