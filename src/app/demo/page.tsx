@@ -70,7 +70,7 @@ export default function Demo() {
           <Box
             sx={{
               position: "fixed",
-              height: "50px",
+              height: "40px",
               bottom: 0,
               left: 0,
               right: 0,

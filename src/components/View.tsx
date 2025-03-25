@@ -7,11 +7,11 @@ function View({ title, content, footer }: { title: string; content: ReactNode; f
     <Box
       sx={{
         width: { xs: "100%", sm: "600px", md: "800px" },
-        height: "calc(100vh - 128px)",
+        height: "calc(100vh - 10rem)",
         display: "flex",
         flexDirection: "column",
         position: "fixed",
-        top: 50,
+        top: 40,
         left: {
           xs: 0,
           sm: "calc(50% - 300px)",
@@ -20,13 +20,12 @@ function View({ title, content, footer }: { title: string; content: ReactNode; f
         right: { xs: 0, sm: "auto" },
       }}
     >
-      <Box sx={{ display: "flex", justifyContent: "center", mt: { xs: 1, sm: 2 }, mb: { xs: 3, sm: 5 } }}>
-        <Typography variant="h5" sx={{ fontWeight: "bold" }}>
-          {title}
-        </Typography>
-      </Box>
-
       <Box sx={{ flex: 1, px: { xs: 3, sm: 4 }, maxWidth: "100%", overflow: "auto", wordBreak: "break-word" }}>
+        <Box sx={{ display: "flex", justifyContent: "center", mt: { xs: 1, sm: 2 }, mb: { xs: 3, sm: 5 } }}>
+          <Typography variant="h5" sx={{ fontWeight: "bold" }}>
+            {title}
+          </Typography>
+        </Box>
         {content}
       </Box>
 
