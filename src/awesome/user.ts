@@ -3,7 +3,7 @@ import { BIP32Factory, BIP32Interface } from "bip32"
 import * as ecc from "tiny-secp256k1"
 import { sha256 } from "js-sha256"
 import { Buffer } from "buffer"
-import { ChainBrief, ChainDetail } from "./api"
+import { Achievement, AchievementVerificationResult, ChainBrief, ChainDetail } from "./api"
 
 export class User {
   private _name: string
@@ -14,6 +14,8 @@ export class User {
   private chains: Record<string, ChainDetail> = {}
   private addresses: Record<string, string> = {}
   private balances: Record<string, number> = {}
+  private achievements: Record<string, Achievement> = {}
+  private achievementVerificationResults: Record<string, AchievementVerificationResult> = {}
 
   constructor(name: string, mnemonic: string, passphrase: string) {
     this._name = name
@@ -36,6 +38,30 @@ export class User {
 
   get publicKey(): string {
     return this._publicKey
+  }
+
+  public totalBalance(): number {
+    return Object.values(this.balances).reduce((acc, balance) => acc + balance, 0)
+  }
+
+  public addAchievement(achievement: Achievement) {
+    this.achievements[achievement.signature] = achievement
+  }
+
+  public getAchievement(signature: string): Achievement | null {
+    return this.achievements[signature] || null
+  }
+
+  public getAchievements(): Achievement[] {
+    return Object.values(this.achievements).sort((a, b) => b.timestamp - a.timestamp)
+  }
+
+  public addAchievementVerificationResult(result: AchievementVerificationResult) {
+    this.achievementVerificationResults[result.achievementSignature] = result
+  }
+
+  public getAchievementVerificationResult(signature: string): AchievementVerificationResult | null {
+    return this.achievementVerificationResults[signature] || null
   }
 
   public deriveAddress(chainUuid: string): string {
@@ -74,5 +100,19 @@ export class User {
 
   public getBalance(chainUuid: string): number {
     return this.balances[chainUuid]
+  }
+
+  public signAchievement(achievement: Achievement): string {
+    if (!this.wallet) {
+      return ""
+    }
+    const messageHash = sha256(
+      achievement.chainUuid +
+        achievement.userAddress +
+        achievement.description +
+        achievement.evidenceImage +
+        achievement.timestamp.toString()
+    )
+    return Buffer.from(this.wallet.sign(Buffer.from(messageHash, "hex"))).toString("hex")
   }
 }

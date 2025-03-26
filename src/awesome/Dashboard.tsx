@@ -78,6 +78,7 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
     useState<AchievementVerificationResult | null>(null)
   const [waitingVerification, setWaitingVerification] = useState<boolean>(false)
   const [showPrompt, setShowPrompt] = useState<boolean>(false)
+  const [totalBalance, setTotalBalance] = useState<number>(0)
 
   useEffect(() => {
     socket.on("public chains", (chains: ChainBrief[]) => {
@@ -87,6 +88,14 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
     socket.on("achievement verification result", (result: AchievementVerificationResult) => {
       setWaitingVerification(false)
       setAchievementVerificationResult(result)
+      if (result.reward > 0) {
+        const achievement = user.getAchievement(result.achievementSignature)
+        if (achievement) {
+          user.addAchievementVerificationResult(result)
+          user.setBalance(achievement.chainUuid, (user.getBalance(achievement.chainUuid) ?? 0) + result.reward)
+        }
+      }
+      setTotalBalance(user.totalBalance())
     })
 
     return () => {
@@ -126,88 +135,78 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
 
   const submitAchievement = () => {
     setWaitingVerification(true)
-    socket.emit("new achievement", {
+    const achievement: Achievement = {
       chainUuid: chains.find((chain) => chain.info.name === selectedChain)?.info.uuid ?? "",
       userAddress: user.deriveAddress(selectedChain),
       description: achievementDescription,
       evidenceImage: achievementEvidence,
       timestamp: Date.now(),
       signature: "",
-    } satisfies Achievement)
+    }
+    achievement.signature = user.signAchievement(achievement)
+    user.addAchievement(achievement)
+    socket.emit("new achievement", achievement)
   }
 
   return (
     <View
-      title="Dashboard"
+      // title="Dashboard"
       content={
         <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1.5 }}>
-          <Stack direction="column" alignItems="start" width="90%" sx={{ mb: 1.5 }}>
-            <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+          <Stack direction="column" alignItems="start" width="90%" gap={1} sx={{ mt: 1, mb: 1 }}>
+            <Box sx={{ display: "flex", gap: 1, alignItems: "end" }}>
               <Typography
-                variant="h5"
+                variant="h4"
                 sx={{
                   fontWeight: "bold",
-                  fontSize: "2rem",
-                  color: "#FFC000", // Gold color
-                  mb: 0.7,
+                  color: "warning.main",
                 }}
               >
-                10
+                {totalBalance}
               </Typography>
               <Typography
-                variant="body1"
+                variant="subtitle1"
                 sx={{
                   fontWeight: "bold",
-                  color: "#FFC000", // Gold color
-                  fontSize: "1.1rem",
+                  color: "warning.main",
+                  mb: 0.15,
                 }}
               >
                 AwesomeCoins
               </Typography>
             </Box>
-            <Box sx={{ display: "flex", gap: 0.5 }}>
+            <Box sx={{ display: "flex", gap: 1 }}>
               <Button
-                variant="outlined"
+                variant="contained"
                 size="small"
+                color="warning"
                 sx={{
-                  minWidth: "60px",
-                  height: "28px",
-                  borderRadius: "14px",
+                  minWidth: "55px",
+                  height: "26px",
+                  borderRadius: 4,
                   fontSize: "0.75rem",
                   fontWeight: "bold",
-                  borderColor: "#666666",
-                  color: "#FFFFFF",
-                  "&:hover": {
-                    borderColor: "#FFC000",
-                    color: "#FFC000",
-                  },
                 }}
               >
                 SEND
               </Button>
               <Button
-                variant="outlined"
+                variant="contained"
                 size="small"
+                color="warning"
                 sx={{
-                  py: 0.5,
-                  px: 2,
-                  minWidth: "80px",
-                  height: "28px",
-                  borderRadius: "14px",
+                  minWidth: "55px",
+                  height: "26px",
+                  borderRadius: 4,
                   fontSize: "0.75rem",
                   fontWeight: "bold",
-                  borderColor: "#666666",
-                  color: "#FFFFFF",
-                  "&:hover": {
-                    borderColor: "#FFC000",
-                    color: "#FFC000",
-                  },
                 }}
               >
                 RECEIVE
               </Button>
             </Box>
           </Stack>
+
           <Typography
             variant="subtitle1"
             textAlign="center"
@@ -226,16 +225,15 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
 
           <Box>
             {achievementEvidence ? (
-              <Box sx={{ mt: 2, position: "relative", display: "flex", justifyContent: "center" }}>
+              <Box sx={{ position: "relative", display: "flex", justifyContent: "center" }}>
                 <Image
                   src={achievementEvidence}
                   alt="Evidence"
                   width={300}
-                  height={140}
+                  height={120}
                   style={{
-                    width: "90%",
+                    width: "80%",
                     height: "auto",
-                    maxHeight: "140px",
                     objectFit: "contain",
                   }}
                   unoptimized
@@ -259,7 +257,7 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
                   variant="outlined"
                   color="primary"
                   onClick={() => document.getElementById("evidence-input")?.click()}
-                  endIcon={<AddPhotoAlternateOutlined sx={{ mb: 0.3 }} />}
+                  endIcon={<AddPhotoAlternateOutlined sx={{ mb: 0.4 }} />}
                   sx={{ px: 1.5, py: 0.5 }}
                 >
                   <input
@@ -283,7 +281,7 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
               gap: 1,
             }}
           >
-            <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
+            <Typography variant="body1" sx={{ fontWeight: "bold" }}>
               <span style={{ position: "relative", top: "-1.5px" }}>@</span>Chain
             </Typography>
             <Select size="small" value={selectedChain} onChange={(e) => setSelectedChain(e.target.value)}>
@@ -394,7 +392,7 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
             </Box>
           ) : (
             <Typography variant="body1" sx={{ fontWeight: "bold" }}>
-              Publish MY Awesome
+              Publish My Awesome
             </Typography>
           )}
         </Button>

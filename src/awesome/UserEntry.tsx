@@ -150,10 +150,14 @@ export default function UserEntry({
       title="Join the Awesome Network"
       content={
         <Box sx={{ flex: 1 }}>
-          <Typography variant="body2" sx={{ fontWeight: "bold", textAlign: "center", mt: -2, mb: 4, px: 5 }}>
+          <Typography
+            variant="body1"
+            color="warning"
+            sx={{ fontWeight: "bold", textAlign: "center", mt: 0, mb: 3, px: 5 }}
+          >
             Turn your real-world awesome into AI-verified blockchain proof
           </Typography>
-          <Stack spacing={2} sx={{ flex: 1 }}>
+          <Stack spacing={1.5} sx={{ flex: 1 }}>
             <ToggleButtonGroup
               value={mode}
               exclusive
@@ -252,7 +256,7 @@ export default function UserEntry({
                         </Tooltip>
                       )}
                     </Stack>
-                    <Typography variant="caption" sx={{ textAlign: "center", color: "text.secondary", px: 4 }}>
+                    <Typography variant="caption" sx={{ textAlign: "center", color: "text.secondary", px: 6 }}>
                       Write down your mnemonic phrase and store it in a safe place. This is the only way to access and
                       recover your account.
                     </Typography>
