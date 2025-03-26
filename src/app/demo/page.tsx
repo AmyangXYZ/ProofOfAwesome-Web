@@ -8,16 +8,13 @@ import { CurrencyBitcoin, DashboardSharp, ExploreOutlined, Menu, Notifications, 
 import { Box, IconButton, Stack, Tab, Tabs } from "@mui/material"
 import { useEffect, useState } from "react"
 import { io } from "socket.io-client"
+import ChainExplorer from "@/awesome/ChainExplorer"
 
 export default function Demo() {
   const [user, setUser] = useState<User | null>(null)
   const [socket, setSocket] = useState<Socket | null>(null)
   const [isOnboarded, setIsOnboarded] = useState<boolean>(false)
-  const [tab, setTab] = useState<number>(0)
-
-  useEffect(() => {
-    console.log(isOnboarded)
-  }, [isOnboarded])
+  const [currentView, setCurrentView] = useState<"dashboard" | "chainExplorer">("dashboard")
 
   useEffect(() => {
     const socket = io("https://api.proof-of-awesome.app")
@@ -65,8 +62,27 @@ export default function Demo() {
 
       {socket && !isOnboarded && <UserEntry socket={socket} setUser={setUser} setIsOnboarded={setIsOnboarded} />}
       {socket && user && isOnboarded && (
-        <>
-          <Dashboard socket={socket} user={user} />
+        <Box>
+          <Box sx={{ position: "relative", minHeight: "100vh" }}>
+            <Box
+              sx={{
+                position: "absolute",
+                opacity: currentView === "dashboard" ? 1 : 0,
+                pointerEvents: currentView === "dashboard" ? "auto" : "none",
+              }}
+            >
+              <Dashboard socket={socket} user={user} />
+            </Box>
+            <Box
+              sx={{
+                position: "absolute",
+                opacity: currentView === "chainExplorer" ? 1 : 0,
+                pointerEvents: currentView === "chainExplorer" ? "auto" : "none",
+              }}
+            >
+              <ChainExplorer />
+            </Box>
+          </Box>
           <Box
             sx={{
               position: "fixed",
@@ -78,8 +94,8 @@ export default function Demo() {
             }}
           >
             <Tabs
-              value={tab}
-              onChange={(_, newValue) => setTab(newValue)}
+              value={currentView}
+              onChange={(_, newView) => setCurrentView(newView)}
               variant="fullWidth"
               sx={{
                 height: "48px",
@@ -89,12 +105,12 @@ export default function Demo() {
                 backgroundColor: "black",
               }}
             >
-              <Tab icon={<DashboardSharp />} sx={{ "&.Mui-selected": { color: "white" } }} />
-              <Tab icon={<ExploreOutlined />} sx={{ "&.Mui-selected": { color: "white" } }} />
-              <Tab icon={<CurrencyBitcoin />} sx={{ "&.Mui-selected": { color: "white" } }} />
+              <Tab value="dashboard" icon={<DashboardSharp />} sx={{ "&.Mui-selected": { color: "white" } }} />
+              <Tab value="chainExplorer" icon={<ExploreOutlined />} sx={{ "&.Mui-selected": { color: "white" } }} />
+              <Tab value="wallet" icon={<CurrencyBitcoin />} sx={{ "&.Mui-selected": { color: "white" } }} />
             </Tabs>
           </Box>
-        </>
+        </Box>
       )}
     </Box>
   )
