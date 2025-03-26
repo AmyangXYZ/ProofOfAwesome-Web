@@ -7,17 +7,27 @@ import {
   DialogTitle,
   IconButton,
   MenuItem,
+  Paper,
   Select,
   Stack,
   TextField,
   Typography,
 } from "@mui/material"
 import Image from "next/image"
-import { User } from "./user"
-import { Achievement, AchievementVerificationResult, ChainBrief, Socket } from "./api"
+import { User } from "../awesome/user"
+import {
+  Achievement,
+  AchievementVerificationResult,
+  Block,
+  ChainBrief,
+  ChainDetail,
+  Membership,
+  Socket,
+} from "../awesome/api"
 import { useEffect, useState } from "react"
 import View from "@/components/View"
-import { AddPhotoAlternateOutlined, Close, Info, RocketLaunch } from "@mui/icons-material"
+import { AddPhotoAlternateOutlined, Close, Info, KeyboardArrowRight, RocketLaunch } from "@mui/icons-material"
+import ChainList from "./ChainList"
 
 const prompt = `You are a validator for Proof of Awesome - a blockchain app rewarding real-world achievements with AwesomeCoin. Each chain has its own independent AwesomeCoin rewards that can only be used within that chain. You MUST verify that achievements match the chain's theme and purpose before awarding coins.
 
@@ -79,12 +89,25 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
   const [waitingVerification, setWaitingVerification] = useState<boolean>(false)
   const [showPrompt, setShowPrompt] = useState<boolean>(false)
   const [totalBalance, setTotalBalance] = useState<number>(0)
+  const [balances, setBalances] = useState<Record<string, number>>({})
+  const [blocks, setBlocks] = useState<Block[]>([])
 
   useEffect(() => {
     socket.on("public chains", (chains: ChainBrief[]) => {
-      setChains(chains)
       setSelectedChain(chains[0].info.name)
+      // todo: join chain
+      for (const chain of chains) {
+        console.log("join chain", chain.info.uuid)
+        socket.emit("join chain", chain.info.uuid)
+      }
     })
+
+    socket.on("join chain success", (chainDetail: ChainDetail) => {
+      user.joinChain(chainDetail)
+      setBalances((prev) => ({ ...prev, [chainDetail.info.uuid]: 0 }))
+      setChains((prev) => [...prev, chainDetail])
+    })
+
     socket.on("achievement verification result", (result: AchievementVerificationResult) => {
       setWaitingVerification(false)
       setAchievementVerificationResult(result)
@@ -92,14 +115,40 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
         const achievement = user.getAchievement(result.achievementSignature)
         if (achievement) {
           user.addAchievementVerificationResult(result)
-          user.setBalance(achievement.chainUuid, (user.getBalance(achievement.chainUuid) ?? 0) + result.reward)
+          if (result.reward > 0) {
+            const block = user.createBlock(achievement.chainUuid, result.achievementSignature)
+            if (block) {
+              socket.emit("new block", block)
+            }
+          }
         }
       }
-      setTotalBalance(user.totalBalance())
+    })
+
+    socket.on("new block created", (block: Block) => {
+      const chain = user.getChain(block.chainUuid)
+      if (chain) {
+        setBlocks(chain.recentBlocks)
+      }
+    })
+
+    socket.on("membership update", (membership: Membership) => {
+      user.setBalance(membership.chainUuid, membership.balance)
+      setBalances((prev) => ({ ...prev, [membership.chainUuid]: membership.balance }))
+      setTotalBalance(user.totalBalance)
+    })
+
+    socket.on("error", (message: string) => {
+      console.error("error", message)
     })
 
     return () => {
       socket.off("achievement verification result")
+      socket.off("join chain success")
+      socket.off("public chains")
+      socket.off("new block created")
+      socket.off("membership update")
+      socket.off("error")
     }
   }, [socket, user])
 
@@ -113,27 +162,53 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
       return
     }
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      alert("Image size should be less than 5MB")
-      return
-    }
-
     try {
-      // Convert to base64
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        const base64 = e.target?.result as string
+      // Create an image element
+      const img = document.createElement("img")
+      const imageUrl = URL.createObjectURL(file)
+
+      img.onload = () => {
+        // Create canvas for compression
+        const canvas = document.createElement("canvas")
+        const ctx = canvas.getContext("2d")
+
+        // Calculate new dimensions (max 1200px width/height)
+        let width = img.width
+        let height = img.height
+        const maxSize = 1200
+
+        if (width > maxSize || height > maxSize) {
+          if (width > height) {
+            height = Math.round((height * maxSize) / width)
+            width = maxSize
+          } else {
+            width = Math.round((width * maxSize) / height)
+            height = maxSize
+          }
+        }
+
+        // Set canvas size and draw image
+        canvas.width = width
+        canvas.height = height
+        ctx?.drawImage(img, 0, 0, width, height)
+
+        // Convert to base64 with reduced quality
+        const base64 = canvas.toDataURL("image/jpeg", 0.8)
         setAchievementEvidence(base64)
+
+        // Cleanup
+        URL.revokeObjectURL(imageUrl)
       }
-      reader.readAsDataURL(file)
+
+      img.src = imageUrl
     } catch (error) {
-      console.error("Error converting image:", error)
+      console.error("Error processing image:", error)
       alert("Failed to process image")
     }
   }
 
   const submitAchievement = () => {
+    setAchievementVerificationResult(null)
     setWaitingVerification(true)
     const achievement: Achievement = {
       chainUuid: chains.find((chain) => chain.info.name === selectedChain)?.info.uuid ?? "",
@@ -152,9 +227,17 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
     <View
       // title="Dashboard"
       content={
-        <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1.5 }}>
-          <Stack direction="column" alignItems="start" width="90%" gap={1} sx={{ mt: 1, mb: 1 }}>
-            <Box sx={{ display: "flex", gap: 1, alignItems: "end" }}>
+        <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
+          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "start", gap: 1, width: "100%" }}>
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "row",
+                width: "100%",
+                gap: 1,
+                alignItems: "end",
+              }}
+            >
               <Typography
                 variant="h4"
                 sx={{
@@ -175,7 +258,7 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
                 AwesomeCoins
               </Typography>
             </Box>
-            <Box sx={{ display: "flex", gap: 1 }}>
+            <Box sx={{ display: "flex", gap: 1, mt: -0.5 }}>
               <Button
                 variant="contained"
                 size="small"
@@ -205,12 +288,12 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
                 RECEIVE
               </Button>
             </Box>
-          </Stack>
+          </Box>
 
           <Typography
             variant="subtitle1"
             textAlign="center"
-            sx={{ textDecoration: "line-through", fontWeight: "bold" }}
+            sx={{ mt: 1, textDecoration: "line-through", fontWeight: "bold" }}
           >
             🎉 I am thrilled to announce that I have 🏆
           </Typography>
@@ -220,7 +303,6 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
             onChange={(e) => setAchievementDescription(e.target.value)}
             fullWidth
             multiline
-            sx={{ width: "90%", borderRadius: 8 }}
           />
 
           <Box>
@@ -234,6 +316,7 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
                   style={{
                     width: "80%",
                     height: "auto",
+                    maxHeight: "120px",
                     objectFit: "contain",
                   }}
                   unoptimized
@@ -299,10 +382,10 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
             slotProps={{
               paper: {
                 sx: {
-                  width: "90%",
-                  maxHeight: "70vh",
+                  maxHeight: "90dvh",
                   borderRadius: 4,
                 },
+                elevation: 16,
               },
             }}
           >
@@ -341,35 +424,88 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
               </Box>
             </DialogContent>
           </Dialog>
-          {achievementVerificationResult && (
-            <Box
-              sx={{
-                display: "flex",
-                flexDirection: "column",
-                gap: 1,
-                width: "90%",
-              }}
-            >
-              <Stack direction="row" alignItems="center" justifyContent="space-between">
-                <Typography variant="subtitle1" color="info" sx={{ fontWeight: "bold" }}>
-                  AI verification result:
-                </Typography>
-                <IconButton size="small" color="info" onClick={() => setShowPrompt(true)}>
-                  <Info fontSize="small" />
-                </IconButton>
-              </Stack>
 
-              <Typography
-                variant="body2"
-                sx={{ fontWeight: "bold" }}
-                color={achievementVerificationResult.reward > 0 ? "success" : "error"}
-                textAlign="start"
-              >
-                {achievementVerificationResult.reward > 0 ? "✅ " : "❌ "}
-                {achievementVerificationResult.message}
-              </Typography>
-            </Box>
-          )}
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 0,
+              minHeight: 0,
+            }}
+          >
+            {achievementVerificationResult && (
+              <>
+                <Stack direction="row" alignItems="center" justifyContent="space-between">
+                  <Typography variant="subtitle1" color="info" sx={{ fontWeight: "bold" }}>
+                    🤖 AI verification result:
+                  </Typography>
+                  <IconButton size="small" color="info" onClick={() => setShowPrompt(true)}>
+                    <Info fontSize="small" />
+                  </IconButton>
+                </Stack>
+
+                <Typography
+                  variant="body2"
+                  sx={{ fontWeight: "bold" }}
+                  color={achievementVerificationResult.reward > 0 ? "success" : "error"}
+                  textAlign="start"
+                >
+                  {achievementVerificationResult.reward > 0 ? "✅ " : "❌ "}
+                  {achievementVerificationResult.message}
+                </Typography>
+
+                {/* block append animation */}
+                {achievementVerificationResult.reward > 0 && (
+                  <Box
+                    sx={{
+                      display: "flex",
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      width: "100%",
+                      mt: 2,
+                    }}
+                  >
+                    {blocks.map((block) => (
+                      <Box
+                        key={block.hash}
+                        sx={{
+                          display: "flex",
+                          flexDirection: "row",
+                          alignItems: "center",
+                          gap: 0,
+                          justifyContent: "center",
+                        }}
+                      >
+                        <Paper
+                          elevation={0}
+                          sx={{
+                            width: 48,
+                            height: 36,
+                            display: "flex",
+                            justifyContent: "center",
+                            alignItems: "center",
+                            border: "1px solid gray",
+                            bgcolor: "transparent",
+                          }}
+                        >
+                          <Typography variant="caption">#{block.height}</Typography>
+                        </Paper>
+                        <Box sx={{ width: 20, height: 1.5, bgcolor: "grey.500" }} />
+                      </Box>
+                    ))}
+                  </Box>
+                )}
+              </>
+            )}
+          </Box>
+
+          <Box sx={{ mt: 2, width: "100%" }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: "bold", display: "flex", alignItems: "center", mb: 0.5 }}>
+              My Chains <KeyboardArrowRight fontSize="small" sx={{ color: "text.secondary" }} />
+            </Typography>
+            <ChainList chains={chains} balances={balances} />
+          </Box>
         </Box>
       }
       footer={

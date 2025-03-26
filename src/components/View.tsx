@@ -19,9 +19,9 @@ function View({ title, content, footer }: { title?: string; content: ReactNode; 
         right: { xs: 0, sm: "auto" },
       }}
     >
-      <Box sx={{ flex: 1, px: { xs: 2, sm: 4 }, maxWidth: "100%", overflow: "auto", wordBreak: "break-word" }}>
+      <Box sx={{ flex: 1, px: { xs: 3, sm: 4 }, maxWidth: "100%", overflow: "auto", wordBreak: "break-word" }}>
         {title && (
-          <Typography variant="h5" sx={{ fontWeight: "bold", textAlign: "center", mt: 0.5, mb: 4 }}>
+          <Typography variant="h5" sx={{ fontWeight: "bold", textAlign: "center", mt: 0.5, mb: 2 }}>
             {title}
           </Typography>
         )}

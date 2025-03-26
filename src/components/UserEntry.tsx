@@ -24,7 +24,7 @@ import {
   VisibilityOff,
 } from "@mui/icons-material"
 import { User } from "@/awesome/user"
-import { Socket, ChainBrief, Membership, UserInfo } from "@/awesome/api"
+import { Socket, ChainBrief, Membership, UserInfo, ChainDetail } from "@/awesome/api"
 import View from "@/components/View"
 
 export default function UserEntry({
@@ -61,7 +61,12 @@ export default function UserEntry({
       "sign in success",
       ({ memberships, chainBriefs }: { memberships: Membership[]; chainBriefs: ChainBrief[] }) => {
         for (const chainBrief of chainBriefs) {
-          userRef.current!.joinChain(chainBrief)
+          userRef.current!.joinChain({
+            info: chainBrief.info,
+            stats: chainBrief.stats,
+            recentBlocks: [],
+            pendingTransactions: [],
+          } satisfies ChainDetail)
         }
 
         for (const membership of memberships) {
@@ -149,11 +154,11 @@ export default function UserEntry({
     <View
       title="Join the Awesome Network"
       content={
-        <Box sx={{ flex: 1 }}>
+        <Box>
           <Typography
-            variant="body1"
+            variant="subtitle2"
             color="warning"
-            sx={{ fontWeight: "bold", textAlign: "center", mt: 0, mb: 3, px: 5 }}
+            sx={{ fontWeight: "bold", textAlign: "center", mb: 3, px: 7 }}
           >
             Turn your real-world awesome into AI-verified blockchain proof
           </Typography>

@@ -2,13 +2,13 @@
 
 import { Socket } from "@/awesome/api"
 import { User } from "@/awesome/user"
-import UserEntry from "@/awesome/UserEntry"
-import Dashboard from "@/awesome/Dashboard"
+import UserEntry from "@/components/UserEntry"
+import Dashboard from "@/components/Dashboard"
 import { CurrencyBitcoin, DashboardSharp, ExploreOutlined, Menu, Notifications, Person } from "@mui/icons-material"
 import { Box, IconButton, Stack, Tab, Tabs } from "@mui/material"
 import { useEffect, useState } from "react"
 import { io } from "socket.io-client"
-import ChainExplorer from "@/awesome/ChainExplorer"
+import ChainExplorer from "@/components/ChainExplorer"
 
 export default function Demo() {
   const [user, setUser] = useState<User | null>(null)

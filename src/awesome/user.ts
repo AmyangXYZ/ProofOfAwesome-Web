@@ -3,7 +3,7 @@ import { BIP32Factory, BIP32Interface } from "bip32"
 import * as ecc from "tiny-secp256k1"
 import { sha256 } from "js-sha256"
 import { Buffer } from "buffer"
-import { Achievement, AchievementVerificationResult, ChainBrief, ChainDetail } from "./api"
+import { Achievement, AchievementVerificationResult, Block, ChainDetail } from "./api"
 
 export class User {
   private _name: string
@@ -40,7 +40,7 @@ export class User {
     return this._publicKey
   }
 
-  public totalBalance(): number {
+  get totalBalance(): number {
     return Object.values(this.balances).reduce((acc, balance) => acc + balance, 0)
   }
 
@@ -82,16 +82,15 @@ export class User {
     return this.addresses[chainUuid]
   }
 
-  public joinChain(chainBrief: ChainBrief): void {
-    const address = this.deriveAddress(chainBrief.info.uuid)
-    this.addresses[chainBrief.info.uuid] = address
-    this.balances[chainBrief.info.uuid] = 0
-    this.chains[chainBrief.info.uuid] = {
-      info: chainBrief.info,
-      stats: chainBrief.stats,
-      recentBlocks: [],
-      pendingTransactions: [],
-    } satisfies ChainDetail
+  public joinChain(chainDetail: ChainDetail): void {
+    const address = this.deriveAddress(chainDetail.info.uuid)
+    this.addresses[chainDetail.info.uuid] = address
+    this.balances[chainDetail.info.uuid] = 0
+    this.chains[chainDetail.info.uuid] = chainDetail
+  }
+
+  public getChain(chainUuid: string): ChainDetail | null {
+    return this.chains[chainUuid] || null
   }
 
   public setBalance(chainUuid: string, balance: number): void {
@@ -114,5 +113,37 @@ export class User {
         achievement.timestamp.toString()
     )
     return Buffer.from(this.wallet.sign(Buffer.from(messageHash, "hex"))).toString("hex")
+  }
+
+  public createBlock(chainUuid: string, achievementSignature: string): Block | null {
+    if (
+      !this.chains[chainUuid] ||
+      !this.achievements[achievementSignature] ||
+      !this.getAchievementVerificationResult(achievementSignature)
+    ) {
+      return null
+    }
+    const chain = this.chains[chainUuid]
+
+    const block = {
+      chainUuid,
+      achievementSignature,
+      height: chain.stats.numberOfBlocks,
+      previousHash: chain.recentBlocks[chain.recentBlocks.length - 1].hash,
+      transactionSignatures: [],
+      merkleRoot: "",
+      timestamp: Date.now(),
+      hash: "",
+    } satisfies Block
+
+    block.hash = sha256(
+      block.chainUuid +
+        block.achievementSignature +
+        block.height.toString() +
+        block.previousHash +
+        block.merkleRoot +
+        block.timestamp.toString()
+    )
+    return block
   }
 }
