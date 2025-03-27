@@ -146,4 +146,13 @@ export class User {
     )
     return block
   }
+
+  public addBlock(block: Block) {
+    const chain = this.chains[block.chainUuid]
+    if (!chain) {
+      return
+    }
+    chain.recentBlocks.push(block)
+    chain.stats.numberOfBlocks++
+  }
 }

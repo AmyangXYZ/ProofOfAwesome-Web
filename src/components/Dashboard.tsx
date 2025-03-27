@@ -24,7 +24,7 @@ import {
   Membership,
   Socket,
 } from "../awesome/api"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import View from "@/components/View"
 import { AddPhotoAlternateOutlined, Close, Info, KeyboardArrowRight, RocketLaunch } from "@mui/icons-material"
 import ChainList from "./ChainList"
@@ -86,6 +86,7 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
   const [achievementEvidence, setAchievementEvidence] = useState<string>("")
   const [achievementVerificationResult, setAchievementVerificationResult] =
     useState<AchievementVerificationResult | null>(null)
+  const verificationResultRef = useRef<HTMLDivElement>(null)
   const [waitingVerification, setWaitingVerification] = useState<boolean>(false)
   const [showPrompt, setShowPrompt] = useState<boolean>(false)
   const [totalBalance, setTotalBalance] = useState<number>(0)
@@ -126,9 +127,11 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
     })
 
     socket.on("new block created", (block: Block) => {
+      user.addBlock(block)
       const chain = user.getChain(block.chainUuid)
       if (chain) {
-        setBlocks(chain.recentBlocks)
+        const sortedBlocks = chain.recentBlocks.sort((a, b) => a.timestamp - b.timestamp)
+        setBlocks(sortedBlocks.slice(-4))
       }
     })
 
@@ -210,6 +213,7 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
   const submitAchievement = () => {
     setAchievementVerificationResult(null)
     setWaitingVerification(true)
+    setBlocks([])
     const achievement: Achievement = {
       chainUuid: chains.find((chain) => chain.info.name === selectedChain)?.info.uuid ?? "",
       userAddress: user.deriveAddress(selectedChain),
@@ -222,6 +226,15 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
     user.addAchievement(achievement)
     socket.emit("new achievement", achievement)
   }
+
+  useEffect(() => {
+    if (achievementVerificationResult && verificationResultRef.current) {
+      verificationResultRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      })
+    }
+  }, [achievementVerificationResult])
 
   return (
     <View
@@ -258,16 +271,16 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
                 AwesomeCoins
               </Typography>
             </Box>
-            <Box sx={{ display: "flex", gap: 1, mt: -0.5 }}>
+            <Box sx={{ display: "flex", gap: 1 }}>
               <Button
                 variant="contained"
                 size="small"
                 color="warning"
                 sx={{
-                  minWidth: "55px",
-                  height: "26px",
+                  minWidth: "50px",
+                  py: 0.25,
                   borderRadius: 4,
-                  fontSize: "0.75rem",
+                  fontSize: "0.72rem",
                   fontWeight: "bold",
                 }}
               >
@@ -278,10 +291,10 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
                 size="small"
                 color="warning"
                 sx={{
-                  minWidth: "55px",
-                  height: "26px",
+                  minWidth: "50px",
+                  py: 0.25,
                   borderRadius: 4,
-                  fontSize: "0.75rem",
+                  fontSize: "0.72rem",
                   fontWeight: "bold",
                 }}
               >
@@ -341,7 +354,6 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
                   color="primary"
                   onClick={() => document.getElementById("evidence-input")?.click()}
                   endIcon={<AddPhotoAlternateOutlined sx={{ mb: 0.4 }} />}
-                  sx={{ px: 1.5, py: 0.5 }}
                 >
                   <input
                     type="file"
@@ -364,7 +376,7 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
               gap: 1,
             }}
           >
-            <Typography variant="body1" sx={{ fontWeight: "bold" }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
               <span style={{ position: "relative", top: "-1.5px" }}>@</span>Chain
             </Typography>
             <Select size="small" value={selectedChain} onChange={(e) => setSelectedChain(e.target.value)}>
@@ -426,11 +438,12 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
           </Dialog>
 
           <Box
+            ref={verificationResultRef}
             sx={{
               display: "flex",
               flexDirection: "column",
-              gap: 0,
               minHeight: 0,
+              gap: 1,
             }}
           >
             {achievementVerificationResult && (
@@ -455,53 +468,99 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
                 </Typography>
 
                 {/* block append animation */}
-                {achievementVerificationResult.reward > 0 && (
-                  <Box
-                    sx={{
-                      display: "flex",
-                      flexDirection: "row",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      width: "100%",
-                      mt: 2,
-                    }}
-                  >
-                    {blocks.map((block) => (
-                      <Box
-                        key={block.hash}
-                        sx={{
-                          display: "flex",
-                          flexDirection: "row",
-                          alignItems: "center",
-                          gap: 0,
-                          justifyContent: "center",
-                        }}
-                      >
-                        <Paper
-                          elevation={0}
+                {blocks.length > 0 && (
+                  <>
+                    <Typography variant="subtitle1" color="warning.main" sx={{ fontWeight: "bold" }}>
+                      🧊 New block #{blocks[blocks.length - 1].height} added to the chain!
+                    </Typography>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexDirection: "row",
+                        alignItems: "center",
+                        justifyContent: "start",
+                        width: "100%",
+                        ml: 1,
+                      }}
+                    >
+                      {blocks.map((block, index) => (
+                        <Box
+                          key={block.hash}
                           sx={{
-                            width: 48,
-                            height: 36,
                             display: "flex",
-                            justifyContent: "center",
+                            flexDirection: "row",
                             alignItems: "center",
-                            border: "1px solid gray",
-                            bgcolor: "transparent",
+                            gap: 0,
+                            justifyContent: "center",
                           }}
                         >
-                          <Typography variant="caption">#{block.height}</Typography>
-                        </Paper>
-                        <Box sx={{ width: 20, height: 1.5, bgcolor: "grey.500" }} />
-                      </Box>
-                    ))}
-                  </Box>
+                          <Box
+                            sx={{
+                              display: block.height > 0 ? "block" : "none",
+                              width: 18,
+                              height: 1.5,
+                              bgcolor: "grey.500",
+                              ...(index === blocks.length - 1 && {
+                                animation: "slideIn 1s ease-out",
+                                "@keyframes slideIn": {
+                                  from: {
+                                    opacity: 0,
+                                    transform: "translateX(20px)",
+                                  },
+                                  to: {
+                                    opacity: 1,
+                                    transform: "translateX(0)",
+                                  },
+                                },
+                              }),
+                            }}
+                          />
+                          <Paper
+                            elevation={0}
+                            sx={{
+                              width: 56,
+                              py: 0.5,
+                              display: "flex",
+                              justifyContent: "center",
+                              alignItems: "center",
+                              border: index === blocks.length - 1 ? "1px solid gold" : "1px solid gray",
+                              ...(index === blocks.length - 1 && {
+                                visibility: "hidden",
+                                animation: "showAndSlide 1s ease-out 1s forwards",
+                                "@keyframes showAndSlide": {
+                                  from: {
+                                    visibility: "hidden",
+                                    transform: "translateX(20px)",
+                                  },
+                                  to: {
+                                    visibility: "visible",
+                                    transform: "translateX(0)",
+                                  },
+                                },
+                              }),
+                            }}
+                          >
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                fontWeight: "bold",
+                                color: index === blocks.length - 1 ? "warning.main" : "white",
+                              }}
+                            >
+                              #{block.height}
+                            </Typography>
+                          </Paper>
+                        </Box>
+                      ))}
+                    </Box>
+                  </>
                 )}
               </>
             )}
           </Box>
 
-          <Box sx={{ mt: 2, width: "100%" }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: "bold", display: "flex", alignItems: "center", mb: 0.5 }}>
+          <Box sx={{ mt: 10, width: "100%" }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: "bold", display: "flex", alignItems: "center", mb: 1 }}>
               My Chains <KeyboardArrowRight fontSize="small" sx={{ color: "text.secondary" }} />
             </Typography>
             <ChainList chains={chains} balances={balances} />
