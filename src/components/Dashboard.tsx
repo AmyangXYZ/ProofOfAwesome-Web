@@ -26,7 +26,7 @@ import {
 } from "../awesome/api"
 import { useEffect, useRef, useState } from "react"
 import View from "@/components/View"
-import { AddPhotoAlternateOutlined, Close, Info, KeyboardArrowRight, RocketLaunch } from "@mui/icons-material"
+import { AddPhotoAlternateOutlined, Close, Info, KeyboardArrowRight, Add, RocketLaunch } from "@mui/icons-material"
 import ChainList from "./ChainList"
 
 const prompt = `You are a validator for Proof of Awesome - a blockchain app rewarding real-world achievements with AwesomeCoin. Each chain has its own independent AwesomeCoin rewards that can only be used within that chain. You MUST verify that achievements match the chain's theme and purpose before awarding coins.
@@ -79,7 +79,15 @@ VALIDATION RULES:
      ▸ Demonstrate consistency or habit formation
      ▸ Show effort or overcoming challenges`
 
-export default function Dashboard({ socket, user }: { socket: Socket; user: User }) {
+export default function Dashboard({
+  socket,
+  user,
+  setCurrentView,
+}: {
+  socket: Socket
+  user: User
+  setCurrentView: (view: "dashboard" | "chainExplorer" | "trade") => void
+}) {
   const topRef = useRef<HTMLDivElement>(null)
   const [chains, setChains] = useState<ChainBrief[]>([])
   const [achievementDescription, setAchievementDescription] = useState<string>("")
@@ -94,14 +102,15 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
   const [totalBalance, setTotalBalance] = useState<number>(0)
   const [balances, setBalances] = useState<Record<string, number>>({})
   const [blocks, setBlocks] = useState<Block[]>([])
+  const [aiMessageAnimationDuration, setAiMessageAnimationDuration] = useState<number>(0.5)
 
   useEffect(() => {
     socket.on("public chains", (chains: ChainBrief[]) => {
-      setSelectedChain(chains[0].info.name)
-      // todo: join chain
-      for (const chain of chains) {
-        console.log("join chain", chain.info.uuid)
-        socket.emit("join chain", chain.info.uuid)
+      if (chains.length > 0) {
+        setSelectedChain(chains[0].info.name)
+        for (const chain of chains) {
+          socket.emit("join chain", chain.info.uuid)
+        }
       }
     })
 
@@ -231,6 +240,13 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
 
   useEffect(() => {
     if (achievementVerificationResult && verificationResultRef.current) {
+      const wordCount = achievementVerificationResult.message.split(" ").length
+      const baseDelay = 0.5 // Initial delay
+      const wordDelay = 0.1 // Delay per word
+      const buffer = 0.5 // Buffer time after last word
+      const totalDuration = baseDelay + wordCount * wordDelay + buffer
+      setAiMessageAnimationDuration(totalDuration)
+
       verificationResultRef.current?.scrollIntoView({
         behavior: "smooth",
         block: "start",
@@ -242,8 +258,11 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
     <View
       // title="Dashboard"
       content={
-        <Box ref={topRef} sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
-          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "start", gap: 1, width: "100%" }}>
+        <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
+          <Box
+            ref={topRef}
+            sx={{ display: "flex", flexDirection: "column", alignItems: "start", gap: 1, width: "100%" }}
+          >
             <Box
               sx={{
                 display: "flex",
@@ -393,7 +412,6 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
           <Dialog
             onClose={() => setShowPrompt(false)}
             open={showPrompt}
-            maxWidth="md"
             slotProps={{
               paper: {
                 sx: {
@@ -476,7 +494,31 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
                 textAlign="start"
               >
                 {achievementVerificationResult.reward > 0 ? "✅ " : "❌ "}
-                {achievementVerificationResult.message}
+                {achievementVerificationResult.message.split(" ").map((word, index) => (
+                  <Box
+                    key={index}
+                    component="span"
+                    sx={{
+                      display: "inline-block",
+                      opacity: 0,
+                      mr: "4px",
+                      animation: "typeWord 0.05s ease-in-out forwards",
+                      animationDelay: `${0.5 + index * 0.1}s`,
+                      "@keyframes typeWord": {
+                        from: {
+                          opacity: 0,
+                          transform: "translateY(5px)",
+                        },
+                        to: {
+                          opacity: 1,
+                          transform: "translateY(0)",
+                        },
+                      },
+                    }}
+                  >
+                    {word}
+                  </Box>
+                ))}
               </Typography>
 
               {/* block append animation */}
@@ -488,7 +530,7 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
                     gap: 1,
                     opacity: 0,
                     animation: "appear 1s ease-in-out forwards",
-                    animationDelay: "1s",
+                    animationDelay: `${aiMessageAnimationDuration}s`,
                     "@keyframes appear": {
                       from: {
                         opacity: 0,
@@ -512,7 +554,7 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
                       ml: 1,
                       opacity: 0,
                       animation: "appear 0.5s ease-in-out forwards",
-                      animationDelay: "2s",
+                      animationDelay: `${aiMessageAnimationDuration + 1}s`,
                       "@keyframes appear": {
                         from: {
                           opacity: 0,
@@ -542,7 +584,7 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
                             ...(index === blocks.length - 1 && {
                               visibility: "hidden",
                               animation: "slideIn 0.5s ease-out 1s forwards",
-                              animationDelay: "2.5s",
+                              animationDelay: `${aiMessageAnimationDuration + 1.5}s`,
                               "@keyframes slideIn": {
                                 "0%": {
                                   visibility: "hidden",
@@ -574,7 +616,7 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
                             ...(index === blocks.length - 1 && {
                               visibility: "hidden",
                               animation: "slideIn 0.5s ease-out 1s forwards",
-                              animationDelay: "3s",
+                              animationDelay: `${aiMessageAnimationDuration + 2}s`,
                               "@keyframes slideIn": {
                                 "0%": {
                                   visibility: "hidden",
@@ -615,7 +657,7 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
                       mb: -4,
                       opacity: 0,
                       animation: blocks.length > 0 ? "fadeIn 0.5s ease-in forwards" : "none",
-                      animationDelay: "4.5s",
+                      animationDelay: `${aiMessageAnimationDuration + 3}s`,
                       "@keyframes fadeIn": {
                         from: { opacity: 0 },
                         to: { opacity: 1 },
@@ -627,14 +669,24 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
                       color="warning"
                       sx={{ fontWeight: "bold" }}
                       onClick={() => {
+                        // Clear states first
                         setAchievementDescription("")
                         setAchievementEvidence("")
                         setAchievementVerificationResult(null)
                         setBlocks([])
-                        topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+
                         setTimeout(() => {
-                          achievementInputRef.current?.focus()
-                        }, 500)
+                          const element = topRef.current
+                          if (element) {
+                            // Add padding to account for fixed header
+                            element.style.scrollMarginTop = "40px"
+                            element.scrollIntoView({ behavior: "smooth" })
+                          }
+
+                          setTimeout(() => {
+                            achievementInputRef.current?.focus()
+                          }, 500)
+                        }, 50)
                       }}
                     >
                       Have something even cooler?
@@ -646,9 +698,21 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
           )}
 
           <Box sx={{ mt: 10, width: "100%" }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: "bold", display: "flex", alignItems: "center", mb: 1 }}>
-              My Chains <KeyboardArrowRight fontSize="small" sx={{ color: "text.secondary" }} />
-            </Typography>
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
+              <Typography variant="subtitle1" sx={{ fontWeight: "bold", display: "flex", alignItems: "center" }}>
+                My Chains <KeyboardArrowRight fontSize="small" sx={{ color: "text.secondary" }} />
+              </Typography>
+              <IconButton size="small" onClick={() => setCurrentView("chainExplorer")}>
+                <Add fontSize="small" />
+              </IconButton>
+            </Box>
             <ChainList chains={chains} balances={balances} />
           </Box>
         </Box>

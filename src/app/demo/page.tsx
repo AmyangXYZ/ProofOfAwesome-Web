@@ -4,17 +4,18 @@ import { Socket } from "@/awesome/api"
 import { User } from "@/awesome/user"
 import UserEntry from "@/components/UserEntry"
 import Dashboard from "@/components/Dashboard"
-import { CurrencyBitcoin, DashboardSharp, ExploreOutlined, Menu, Notifications, Person } from "@mui/icons-material"
+import { DashboardSharp, ExploreOutlined, Menu, Notifications, Person, SyncAlt } from "@mui/icons-material"
 import { Box, IconButton, Stack, Tab, Tabs } from "@mui/material"
 import { useEffect, useState } from "react"
 import { io } from "socket.io-client"
 import ChainExplorer from "@/components/ChainExplorer"
+import Trade from "@/components/Trade"
 
 export default function Demo() {
   const [user, setUser] = useState<User | null>(null)
   const [socket, setSocket] = useState<Socket | null>(null)
   const [isOnboarded, setIsOnboarded] = useState<boolean>(false)
-  const [currentView, setCurrentView] = useState<"dashboard" | "chainExplorer">("dashboard")
+  const [currentView, setCurrentView] = useState<"dashboard" | "chainExplorer" | "trade">("dashboard")
 
   useEffect(() => {
     const socket = io("https://api.proof-of-awesome.app")
@@ -71,7 +72,7 @@ export default function Demo() {
                 pointerEvents: currentView === "dashboard" ? "auto" : "none",
               }}
             >
-              <Dashboard socket={socket} user={user} />
+              <Dashboard socket={socket} user={user} setCurrentView={setCurrentView} />
             </Box>
             <Box
               sx={{
@@ -81,6 +82,15 @@ export default function Demo() {
               }}
             >
               <ChainExplorer />
+            </Box>
+            <Box
+              sx={{
+                position: "absolute",
+                opacity: currentView === "trade" ? 1 : 0,
+                pointerEvents: currentView === "trade" ? "auto" : "none",
+              }}
+            >
+              <Trade />
             </Box>
           </Box>
           <Box
@@ -107,7 +117,7 @@ export default function Demo() {
             >
               <Tab value="dashboard" icon={<DashboardSharp />} sx={{ "&.Mui-selected": { color: "white" } }} />
               <Tab value="chainExplorer" icon={<ExploreOutlined />} sx={{ "&.Mui-selected": { color: "white" } }} />
-              <Tab value="wallet" icon={<CurrencyBitcoin />} sx={{ "&.Mui-selected": { color: "white" } }} />
+              <Tab value="trade" icon={<SyncAlt />} sx={{ "&.Mui-selected": { color: "white" } }} />
             </Tabs>
           </Box>
         </Box>
