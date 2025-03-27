@@ -80,8 +80,10 @@ VALIDATION RULES:
      ▸ Show effort or overcoming challenges`
 
 export default function Dashboard({ socket, user }: { socket: Socket; user: User }) {
+  const topRef = useRef<HTMLDivElement>(null)
   const [chains, setChains] = useState<ChainBrief[]>([])
   const [achievementDescription, setAchievementDescription] = useState<string>("")
+  const achievementInputRef = useRef<HTMLInputElement>(null)
   const [selectedChain, setSelectedChain] = useState<string>("")
   const [achievementEvidence, setAchievementEvidence] = useState<string>("")
   const [achievementVerificationResult, setAchievementVerificationResult] =
@@ -240,7 +242,7 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
     <View
       // title="Dashboard"
       content={
-        <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
+        <Box ref={topRef} sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
           <Box sx={{ display: "flex", flexDirection: "column", alignItems: "start", gap: 1, width: "100%" }}>
             <Box
               sx={{
@@ -306,11 +308,12 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
           <Typography
             variant="subtitle1"
             textAlign="center"
-            sx={{ mt: 1, textDecoration: "line-through", fontWeight: "bold" }}
+            sx={{ mt: 1, mb: 1, textDecoration: "line-through", fontWeight: "bold" }}
           >
             🎉 I am thrilled to announce that I have 🏆
           </Typography>
           <TextField
+            inputRef={achievementInputRef}
             label="Achievement"
             value={achievementDescription}
             onChange={(e) => setAchievementDescription(e.target.value)}
@@ -552,6 +555,39 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
                           </Paper>
                         </Box>
                       ))}
+                    </Box>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "center",
+                        mt: 4,
+                        mb: -4,
+                        opacity: 0,
+                        animation: blocks.length > 0 ? "fadeIn 0.3s ease-in forwards" : "none",
+                        animationDelay: "2s",
+                        "@keyframes fadeIn": {
+                          from: { opacity: 0 },
+                          to: { opacity: 1 },
+                        },
+                      }}
+                    >
+                      <Button
+                        variant="outlined"
+                        color="warning"
+                        sx={{ fontWeight: "bold" }}
+                        onClick={() => {
+                          setAchievementDescription("")
+                          setAchievementEvidence("")
+                          setAchievementVerificationResult(null)
+                          setBlocks([])
+                          topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+                          setTimeout(() => {
+                            achievementInputRef.current?.focus()
+                          }, 500)
+                        }}
+                      >
+                        Have something even cooler?
+                      </Button>
                     </Box>
                   </>
                 )}
