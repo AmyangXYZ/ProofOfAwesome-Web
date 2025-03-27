@@ -231,7 +231,7 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
 
   useEffect(() => {
     if (achievementVerificationResult && verificationResultRef.current) {
-      verificationResultRef.current.scrollIntoView({
+      verificationResultRef.current?.scrollIntoView({
         behavior: "smooth",
         block: "start",
       })
@@ -440,160 +440,210 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
             </DialogContent>
           </Dialog>
 
-          <Box
-            ref={verificationResultRef}
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              minHeight: 0,
-              gap: 1,
-            }}
-          >
-            {achievementVerificationResult && (
-              <>
-                <Stack direction="row" alignItems="center" justifyContent="space-between">
-                  <Typography variant="subtitle1" color="info" sx={{ fontWeight: "bold" }}>
-                    🤖 AI verification result:
-                  </Typography>
-                  <IconButton size="small" color="info" onClick={() => setShowPrompt(true)}>
-                    <Info fontSize="small" />
-                  </IconButton>
-                </Stack>
-
-                <Typography
-                  variant="body2"
-                  sx={{ fontWeight: "bold" }}
-                  color={achievementVerificationResult.reward > 0 ? "success" : "error"}
-                  textAlign="start"
-                >
-                  {achievementVerificationResult.reward > 0 ? "✅ " : "❌ "}
-                  {achievementVerificationResult.message}
+          {achievementVerificationResult && (
+            <Box
+              ref={verificationResultRef}
+              sx={{
+                width: "100%",
+              }}
+            >
+              <Stack direction="row" alignItems="center" justifyContent="space-between">
+                <Typography variant="subtitle1" color="info" sx={{ fontWeight: "bold" }}>
+                  🤖 AI verification result:
                 </Typography>
+                <IconButton size="small" color="info" onClick={() => setShowPrompt(true)}>
+                  <Info fontSize="small" />
+                </IconButton>
+              </Stack>
 
-                {/* block append animation */}
-                {blocks.length > 0 && (
-                  <>
-                    <Typography variant="subtitle1" color="warning.main" sx={{ fontWeight: "bold" }}>
-                      🧊 New block #{blocks[blocks.length - 1].height} added to the chain!
-                    </Typography>
-                    <Box
-                      sx={{
-                        display: "flex",
-                        flexDirection: "row",
-                        alignItems: "center",
-                        justifyContent: "start",
-                        width: "100%",
-                        ml: 1,
-                      }}
-                    >
-                      {blocks.map((block, index) => (
-                        <Box
-                          key={block.hash}
-                          sx={{
-                            display: "flex",
-                            flexDirection: "row",
-                            alignItems: "center",
-                            gap: 0,
-                            justifyContent: "center",
-                          }}
-                        >
-                          <Box
-                            sx={{
-                              display: block.height > 0 ? "block" : "none",
-                              width: 18,
-                              height: 1.5,
-                              bgcolor: "grey.500",
-                              ...(index === blocks.length - 1 && {
-                                animation: "slideIn 1s ease-out",
-                                "@keyframes slideIn": {
-                                  from: {
-                                    opacity: 0,
-                                    transform: "translateX(20px)",
-                                  },
-                                  to: {
-                                    opacity: 1,
-                                    transform: "translateX(0)",
-                                  },
-                                },
-                              }),
-                            }}
-                          />
-                          <Paper
-                            elevation={0}
-                            sx={{
-                              width: 56,
-                              py: 0.5,
-                              display: "flex",
-                              justifyContent: "center",
-                              alignItems: "center",
-                              border: index === blocks.length - 1 ? "1px solid gold" : "1px solid gray",
-                              ...(index === blocks.length - 1 && {
-                                visibility: "hidden",
-                                animation: "showAndSlide 1s ease-out 1s forwards",
-                                "@keyframes showAndSlide": {
-                                  from: {
-                                    visibility: "hidden",
-                                    transform: "translateX(20px)",
-                                  },
-                                  to: {
-                                    visibility: "visible",
-                                    transform: "translateX(0)",
-                                  },
-                                },
-                              }),
-                            }}
-                          >
-                            <Typography
-                              variant="body2"
-                              sx={{
-                                fontWeight: "bold",
-                                color: index === blocks.length - 1 ? "warning.main" : "white",
-                              }}
-                            >
-                              #{block.height}
-                            </Typography>
-                          </Paper>
-                        </Box>
-                      ))}
-                    </Box>
-                    <Box
-                      sx={{
-                        display: "flex",
-                        justifyContent: "center",
-                        mt: 4,
-                        mb: -4,
+              <Typography
+                variant="body2"
+                sx={{
+                  fontWeight: "bold",
+                  opacity: 0,
+                  animation: "appear 1s ease-in-out forwards",
+                  animationDelay: "0.3s",
+                  "@keyframes appear": {
+                    from: {
+                      opacity: 0,
+                    },
+                    to: {
+                      opacity: 1,
+                    },
+                  },
+                }}
+                color={achievementVerificationResult.reward > 0 ? "success" : "error"}
+                textAlign="start"
+              >
+                {achievementVerificationResult.reward > 0 ? "✅ " : "❌ "}
+                {achievementVerificationResult.message}
+              </Typography>
+
+              {/* block append animation */}
+              {blocks.length > 0 && (
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 1,
+                    opacity: 0,
+                    animation: "appear 1s ease-in-out forwards",
+                    animationDelay: "1s",
+                    "@keyframes appear": {
+                      from: {
                         opacity: 0,
-                        animation: blocks.length > 0 ? "fadeIn 0.3s ease-in forwards" : "none",
-                        animationDelay: "2s",
-                        "@keyframes fadeIn": {
-                          from: { opacity: 0 },
-                          to: { opacity: 1 },
+                      },
+                      to: {
+                        opacity: 1,
+                      },
+                    },
+                  }}
+                >
+                  <Typography variant="subtitle1" color="warning.main" sx={{ fontWeight: "bold" }}>
+                    🧊 New block #{blocks[blocks.length - 1].height} added to the chain!
+                  </Typography>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "start",
+                      width: "100%",
+                      ml: 1,
+                      opacity: 0,
+                      animation: "appear 0.5s ease-in-out forwards",
+                      animationDelay: "2s",
+                      "@keyframes appear": {
+                        from: {
+                          opacity: 0,
                         },
-                      }}
-                    >
-                      <Button
-                        variant="outlined"
-                        color="warning"
-                        sx={{ fontWeight: "bold" }}
-                        onClick={() => {
-                          setAchievementDescription("")
-                          setAchievementEvidence("")
-                          setAchievementVerificationResult(null)
-                          setBlocks([])
-                          topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
-                          setTimeout(() => {
-                            achievementInputRef.current?.focus()
-                          }, 500)
+                        to: {
+                          opacity: 1,
+                        },
+                      },
+                    }}
+                  >
+                    {blocks.map((block, index) => (
+                      <Box
+                        key={block.hash}
+                        sx={{
+                          display: "flex",
+                          flexDirection: "row",
+                          alignItems: "center",
+                          gap: 0,
+                          justifyContent: "center",
                         }}
                       >
-                        Have something even cooler?
-                      </Button>
-                    </Box>
-                  </>
-                )}
-              </>
-            )}
-          </Box>
+                        <Box
+                          sx={{
+                            width: 18,
+                            height: 1.5,
+                            bgcolor: "grey.500",
+                            ...(index === blocks.length - 1 && {
+                              visibility: "hidden",
+                              animation: "slideIn 0.5s ease-out 1s forwards",
+                              animationDelay: "2.5s",
+                              "@keyframes slideIn": {
+                                "0%": {
+                                  visibility: "hidden",
+                                  opacity: 0,
+                                  transform: "translateX(20px) scale(0.95)",
+                                },
+                                "20%": {
+                                  visibility: "visible",
+                                  opacity: 0.5,
+                                },
+                                "100%": {
+                                  visibility: "visible",
+                                  opacity: 1,
+                                  transform: "translateX(0) scale(1)",
+                                },
+                              },
+                            }),
+                          }}
+                        />
+                        <Paper
+                          elevation={0}
+                          sx={{
+                            width: 56,
+                            py: 0.5,
+                            display: "flex",
+                            justifyContent: "center",
+                            alignItems: "center",
+                            border: index === blocks.length - 1 ? "1px solid gold" : "1px solid gray",
+                            ...(index === blocks.length - 1 && {
+                              visibility: "hidden",
+                              animation: "slideIn 0.5s ease-out 1s forwards",
+                              animationDelay: "3s",
+                              "@keyframes slideIn": {
+                                "0%": {
+                                  visibility: "hidden",
+                                  opacity: 0,
+                                  transform: "translateX(20px) scale(0.95)",
+                                },
+                                "20%": {
+                                  visibility: "visible",
+                                  opacity: 0.5,
+                                },
+                                "100%": {
+                                  visibility: "visible",
+                                  opacity: 1,
+                                  transform: "translateX(0) scale(1)",
+                                },
+                              },
+                            }),
+                          }}
+                        >
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              fontWeight: "bold",
+                              color: index === blocks.length - 1 ? "warning.main" : "white",
+                            }}
+                          >
+                            #{block.height}
+                          </Typography>
+                        </Paper>
+                      </Box>
+                    ))}
+                  </Box>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "center",
+                      mt: 4,
+                      mb: -4,
+                      opacity: 0,
+                      animation: blocks.length > 0 ? "fadeIn 0.5s ease-in forwards" : "none",
+                      animationDelay: "4.5s",
+                      "@keyframes fadeIn": {
+                        from: { opacity: 0 },
+                        to: { opacity: 1 },
+                      },
+                    }}
+                  >
+                    <Button
+                      variant="outlined"
+                      color="warning"
+                      sx={{ fontWeight: "bold" }}
+                      onClick={() => {
+                        setAchievementDescription("")
+                        setAchievementEvidence("")
+                        setAchievementVerificationResult(null)
+                        setBlocks([])
+                        topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+                        setTimeout(() => {
+                          achievementInputRef.current?.focus()
+                        }, 500)
+                      }}
+                    >
+                      Have something even cooler?
+                    </Button>
+                  </Box>
+                </Box>
+              )}
+            </Box>
+          )}
 
           <Box sx={{ mt: 10, width: "100%" }}>
             <Typography variant="subtitle1" sx={{ fontWeight: "bold", display: "flex", alignItems: "center", mb: 1 }}>
