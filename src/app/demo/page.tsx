@@ -81,7 +81,7 @@ export default function Demo() {
                 pointerEvents: currentView === "chainExplorer" ? "auto" : "none",
               }}
             >
-              <ChainExplorer />
+              <ChainExplorer user={user} />
             </Box>
             <Box
               sx={{

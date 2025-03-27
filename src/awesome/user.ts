@@ -93,6 +93,10 @@ export class User {
     return this.chains[chainUuid] || null
   }
 
+  public getChains(): ChainDetail[] {
+    return Object.values(this.chains).map((chain) => chain)
+  }
+
   public setBalance(chainUuid: string, balance: number): void {
     this.balances[chainUuid] = balance
   }
