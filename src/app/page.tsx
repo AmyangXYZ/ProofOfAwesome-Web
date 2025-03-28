@@ -19,27 +19,38 @@ export default function Home() {
         }}
       >
         {/* Abstract blockchain animation background would go here */}
-        <Box component="img" src="/logo.png" alt="Proof of Awesome" sx={{ height: 80, mb: 2, zIndex: 2 }} />
+        <Stack direction="row" spacing={{ xs: 0, sm: 2, md: 4 }} alignItems="center">
+          <Box
+            component="img"
+            src="/logo.svg"
+            alt="Proof of Awesome"
+            sx={{
+              height: { xs: 100, sm: 130, md: 160 },
+              mb: 2,
+              zIndex: 2,
+            }}
+          />
 
-        <Typography
-          variant="h2"
-          component="h1"
-          align="center"
-          sx={{
-            fontSize: { xs: "2.5rem", sm: "3.5rem", md: "4rem" },
-            fontWeight: "bold",
-            mb: 1,
-            zIndex: 2,
-          }}
-        >
-          Proof of Awesome
-        </Typography>
+          <Typography
+            variant="h1"
+            component="h1"
+            align="center"
+            sx={{
+              fontSize: { xs: "2.5rem", sm: "3.5rem", md: "4rem" },
+              fontWeight: "bold",
+              mb: 1,
+              zIndex: 2,
+            }}
+          >
+            Proof of Awesome
+          </Typography>
+        </Stack>
 
         <Typography
           variant="h5"
           align="center"
           sx={{
-            maxWidth: "700px",
+            maxWidth: "800px",
             mb: 4,
             color: "orange",
             fontWeight: "medium",

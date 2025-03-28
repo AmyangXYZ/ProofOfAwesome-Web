@@ -1,32 +1,32 @@
 <svg version="1.0" xmlns="http://www.w3.org/2000/svg" width="243pt" height="243pt" viewBox="0 0 243 243"
     preserveAspectRatio="xMidYMid meet">
     <!--Perfect circle for coin shape-->
-    <circle cx="121.5" cy="121.5" r="120" fill="#111111" stroke="#FFA500" stroke-width="1.5" />
+    <circle cx="121.5" cy="121.5" r="120" fill="#FFA500" stroke="black" stroke-width="1.5" />
     <!--Coin edge detail-->
-    <circle cx="121.5" cy="121.5" r="115" fill="none" stroke="#FFA500" stroke-width="0.75" stroke-dasharray="2,2" />
-    <circle cx="121.5" cy="121.5" r="110" fill="none" stroke="#FFA500" stroke-width="1" />
+    <circle cx="121.5" cy="121.5" r="115" fill="none" stroke="black" stroke-width="0.75" stroke-dasharray="2,2" />
+    <circle cx="121.5" cy="121.5" r="110" fill="none" stroke="black" stroke-width="1" />
     <!--Coin rim highlight-->
-    <circle cx="121.5" cy="121.5" r="119" fill="none" stroke="#FFA500" stroke-width="1" opacity="0.5" />
-    <circle cx="121.5" cy="121.5" r="118" fill="none" stroke="#FFA500" stroke-width="1" opacity="0.3" />
+    <circle cx="121.5" cy="121.5" r="119" fill="none" stroke="black" stroke-width="1" opacity="0.5" />
+    <circle cx="121.5" cy="121.5" r="118" fill="none" stroke="black" stroke-width="1" opacity="0.3" />
     <!--Thumbs up (centered on coin)-->
     <g transform="translate(121.5, 121.5) scale(0.9) translate(-121.5, -109)">
-        <g transform="translate(0,196) scale(0.1,-0.1)" fill="#FFA500" stroke="#FFA500">
+        <g transform="translate(0,196) scale(0.1,-0.1)" stroke="none">
             <!--Main thumbs up outline-->
-            <path
+            <path stroke="black" stroke-width="8"
                 d="M934 1699 c-44 -13 -119 -82 -143 -132 -28 -57 -27 -112 4 -333 108 -769 104 -751 169 -836 63 -82 145 -130 251 -146 50 -8 106 -3 336 29 153 21 294 45 315 54 60 25 97 58 129 116 38 71 37 120 -9 437 -30 207 -39 250 -63 294 -35 65 -108 123 -181 145 -54 15 -65 15 -222 -6 -91 -12 -174 -21 -186 -21 -36 0 -52 30 -64 125 -19 148 -60 216 -155 261 -53 25 -123 30 -181 13z m157 -37 c39 -16 95 -67 113 -105 8 -19 22 -76 31 -128 25 -154 48 -170 213 -150 191 24 258 25 310 6 69 -27 134 -98 155 -171 20 -66 77 -473 77 -545 0 -88 -65 -178 -148 -207 -64 -22 -534 -84 -598 -79 -133 10 -259 105 -301 227 -21 61 -143 878 -143 959 0 72 60 157 135 192 42 20 107 20 156 1z" />
             <!--Inner thumb detail-->
-            <path
+            <path fill="black" stroke="black" stroke-width="8"
                 d="M945 1589 c-41 -36 -43 -53 -20 -205 8 -54 21 -148 29 -209 47 -356 88 -613 105 -650 24 -55 74 -110 129 -143 41 -23 57 -26 137 -27 154 0 363 32 404 63 44 32 71 81 71 128 0 61 -56 463 -70 499 -14 37 -46 72 -85 92 -23 12 -48 14 -120 9 -49 -4 -105 -9 -123 -12 -19 -3 -72 -11 -119 -18 -123 -18 -118 -24 -149 204 -29 217 -36 241 -75 275 -40 33 -71 32 -114 -6z m99 -21 c24 -21 28 -39 56 -243 24 -177 34 -223 49 -239 19 -19 22 -19 213 7 106 15 207 27 223 27 42 0 93 -34 110 -72 14 -32 75 -443 75 -503 0 -42 -31 -89 -71 -107 -45 -21 -351 -62 -406 -54 -89 12 -178 81 -208 160 -13 36 -145 928 -145 983 0 22 43 63 66 63 7 0 24 -10 38 -22z" />
-            <!--thumb base-->
-            <path
+            <!--Bottle neck/cap (now thumb base)-->
+            <path fill="black" stroke="black" stroke-width="8"
                 d="M567 1019 c-90 -13 -137 -49 -157 -120 -11 -36 54 -497 74 -538 18 -34 60 -67 99 -76 34 -9 204 14 217 30 10 12 -73 650 -90 693 -11 25 -36 27 -143 11z m113 -51 c5 -13 28 -155 50 -317 36 -262 39 -296 26 -309 -10 -10 -42 -17 -94 -20 -88 -5 -121 8 -147 59 -15 28 -75 418 -75 483 0 27 9 46 33 72 35 38 72 51 155 53 35 1 44 -3 52 -21z" />
         </g>
     </g>
     <!--Coin edge detail around the perimeter-->
     <g>
-        <circle cx="121.5" cy="121.5" r="105" fill="none" stroke="#FFA500" stroke-width="0.5" />
+        <circle cx="121.5" cy="121.5" r="105" fill="none" stroke="black" stroke-width="0.5" />
         <!--Small notches around edge to simulate coin ridges-->
-        <g stroke="#FFA500" stroke-width="0.75">
+        <g stroke="black" stroke-width="0.75">
             <!--Generate notches around the coin edge-->
             <path d="M221.5,121.5 L219,121.5" transform="rotate(0 121.5 121.5)" />
             <path d="M221.5,121.5 L219,121.5" transform="rotate(10 121.5 121.5)" />
@@ -71,7 +71,7 @@
         <path id="textPath" d="M121.5,35 A81.5,81.5 0 1,1 121.5,206" fill="none" />
     </defs>
     <!-- Convert text to paths to ensure compatibility -->
-    <g fill="#FFA500">
+    <g fill="black">
         <!-- Top text -->
         <text font-family="Arial, Helvetica, sans-serif" font-size="9" font-weight="bold">
             <textPath href="#textPath" startOffset="5%" letter-spacing="1">

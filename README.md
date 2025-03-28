@@ -1,5 +1,7 @@
 # Proof of Awesome
 
+<img src="./public/logo.png" height="144"/>
+
 A blockchain-inspired social platform that transforms real-world achievements into verifiable digital assets.
 
 ## 🚀 Overview
