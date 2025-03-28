@@ -4,8 +4,8 @@ import { Socket } from "@/awesome/api"
 import { User } from "@/awesome/user"
 import UserEntry from "@/components/UserEntry"
 import Dashboard from "@/components/Dashboard"
-import { DashboardSharp, ExploreOutlined, Menu, Notifications, Person, SyncAlt } from "@mui/icons-material"
-import { Box, IconButton, Stack, Tab, Tabs } from "@mui/material"
+import { DashboardSharp, ExploreOutlined, GitHub, Notifications, Person, SyncAlt } from "@mui/icons-material"
+import { Box, IconButton, Link, Stack, Tab, Tabs } from "@mui/material"
 import { useEffect, useState } from "react"
 import { io } from "socket.io-client"
 import ChainExplorer from "@/components/ChainExplorer"
@@ -48,9 +48,12 @@ export default function Demo() {
           zIndex: 1000,
         }}
       >
-        <IconButton>
-          <Menu />
-        </IconButton>
+        <Link href="https://github.com/AmyangXYZ/ProofOfAwesome-Web">
+          <IconButton>
+            <GitHub />
+          </IconButton>
+        </Link>
+
         <Stack direction="row" spacing={0}>
           <IconButton>
             <Person />
