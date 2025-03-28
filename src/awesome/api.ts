@@ -22,7 +22,7 @@ export interface ChainHead {
 
 export interface ChainStats {
   chainUuid: string
-  capital: number
+  capitalization: number
   numberOfUsers: number
   numberOfBlocks: number
   numberOfTransactions: number
@@ -44,16 +44,15 @@ export interface Membership {
   userPublicKey: string
   chainUuid: string
   balance: number
-  address: string
 }
 
 export interface Block {
   chainUuid: string
   height: number
   previousHash: string
-  transactionSignatures: string[] // transaction signatures
+  transactions: Transaction[]
   merkleRoot: string
-  achievementSignature: string // achievement signature
+  achievement: Achievement | null
   timestamp: number
   hash: string
 }
@@ -69,7 +68,8 @@ export interface Transaction {
 
 export interface Achievement {
   chainUuid: string
-  userAddress: string
+  userName: string
+  userPublicKey: string
   description: string
   evidenceImage: string
   timestamp: number
@@ -78,7 +78,6 @@ export interface Achievement {
 
 export interface AchievementVerificationResult {
   achievementSignature: string
-  pass: boolean
   message: string
   reward: number
 }

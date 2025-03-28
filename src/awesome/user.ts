@@ -111,7 +111,8 @@ export class User {
     }
     const messageHash = sha256(
       achievement.chainUuid +
-        achievement.userAddress +
+        achievement.userName +
+        achievement.userPublicKey +
         achievement.description +
         achievement.evidenceImage +
         achievement.timestamp.toString()
@@ -119,11 +120,11 @@ export class User {
     return Buffer.from(this.wallet.sign(Buffer.from(messageHash, "hex"))).toString("hex")
   }
 
-  public createBlock(chainUuid: string, achievementSignature: string): Block | null {
+  public createBlock(chainUuid: string, achievement: Achievement): Block | null {
     if (
       !this.chains[chainUuid] ||
-      !this.achievements[achievementSignature] ||
-      !this.getAchievementVerificationResult(achievementSignature)
+      !this.achievements[achievement.signature] ||
+      !this.getAchievementVerificationResult(achievement.signature)
     ) {
       return null
     }
@@ -131,10 +132,10 @@ export class User {
 
     const block = {
       chainUuid,
-      achievementSignature,
+      achievement,
       height: chain.stats.numberOfBlocks,
       previousHash: chain.recentBlocks[chain.recentBlocks.length - 1].hash,
-      transactionSignatures: [],
+      transactions: [],
       merkleRoot: "",
       timestamp: Date.now(),
       hash: "",
@@ -142,7 +143,7 @@ export class User {
 
     block.hash = sha256(
       block.chainUuid +
-        block.achievementSignature +
+        block.achievement.signature +
         block.height.toString() +
         block.previousHash +
         block.merkleRoot +

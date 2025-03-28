@@ -90,7 +90,14 @@ export default function ChainExplorer({ user }: { user: User | null }) {
                       Latest Block
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      {JSON.stringify(chain.recentBlocks[0])}
+                      Height: {chain.recentBlocks[0].height}, Hash: {chain.recentBlocks[0].hash.slice(0, 16)}...
+                      <br />
+                      Achievement: {chain.recentBlocks[0].achievement?.description}
+                      <br />
+                      Creator: {chain.recentBlocks[0].achievement?.userName} [
+                      {chain.recentBlocks[0].achievement?.userPublicKey.slice(0, 8)}...]
+                      <br />
+                      Date: {new Date(chain.recentBlocks[0].timestamp).toLocaleString()}
                     </Typography>
                   </Box>
                 </AccordionDetails>

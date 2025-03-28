@@ -106,6 +106,7 @@ export default function Dashboard({
 
   useEffect(() => {
     socket.on("public chains", (chains: ChainBrief[]) => {
+      console.log("public chains", chains)
       if (chains.length > 0) {
         setSelectedChain(chains[0].info.name)
         for (const chain of chains) {
@@ -128,7 +129,7 @@ export default function Dashboard({
         if (achievement) {
           user.addAchievementVerificationResult(result)
           if (result.reward > 0) {
-            const block = user.createBlock(achievement.chainUuid, result.achievementSignature)
+            const block = user.createBlock(achievement.chainUuid, achievement)
             if (block) {
               socket.emit("new block", block)
             }
@@ -227,7 +228,8 @@ export default function Dashboard({
     setBlocks([])
     const achievement: Achievement = {
       chainUuid: chains.find((chain) => chain.info.name === selectedChain)?.info.uuid ?? "",
-      userAddress: user.deriveAddress(selectedChain),
+      userName: user.name,
+      userPublicKey: user.publicKey,
       description: achievementDescription,
       evidenceImage: achievementEvidence,
       timestamp: Date.now(),
@@ -242,7 +244,7 @@ export default function Dashboard({
     if (achievementVerificationResult && verificationResultRef.current) {
       const wordCount = achievementVerificationResult.message.split(" ").length
       const baseDelay = 0.5 // Initial delay
-      const wordDelay = 0.1 // Delay per word
+      const wordDelay = 0.08 // Delay per word
       const buffer = 0.5 // Buffer time after last word
       const totalDuration = baseDelay + wordCount * wordDelay + buffer
       setAiMessageAnimationDuration(totalDuration)
@@ -503,7 +505,7 @@ export default function Dashboard({
                       opacity: 0,
                       mr: "4px",
                       animation: "typeWord 0.05s ease-in-out forwards",
-                      animationDelay: `${0.5 + index * 0.1}s`,
+                      animationDelay: `${0.5 + index * 0.08}s`,
                       "@keyframes typeWord": {
                         from: {
                           opacity: 0,
