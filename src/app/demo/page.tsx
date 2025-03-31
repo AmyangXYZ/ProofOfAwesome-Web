@@ -18,7 +18,7 @@ export default function Demo() {
   const [currentView, setCurrentView] = useState<"dashboard" | "chainExplorer" | "trade">("dashboard")
 
   useEffect(() => {
-    const socket = io("http://localhost:3000")
+    const socket = io("https://api.proof-of-awesome.app")
     setSocket(socket)
     socket.on("connect", () => {})
     socket.on("connect_error", () => {
