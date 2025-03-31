@@ -2,7 +2,6 @@ import { Socket as SocketIO } from "socket.io-client"
 
 export interface UserInfo {
   publicKey: string
-  name: string
 }
 
 export interface ChainInfo {
@@ -16,7 +15,8 @@ export interface ChainInfo {
 
 export interface ChainHead {
   chainUuid: string
-  latestBlock: Block
+  latestBlockHash: string
+  latestBlockHeight: number
   timestamp: number
 }
 
@@ -33,16 +33,10 @@ export interface ChainBrief {
   stats: ChainStats
 }
 
-export interface ChainDetail {
-  info: ChainInfo
-  stats: ChainStats
-  recentBlocks: Block[]
-  pendingTransactions: Transaction[]
-}
-
 export interface Membership {
   userPublicKey: string
   chainUuid: string
+  address: string
   balance: number
 }
 
@@ -50,15 +44,16 @@ export interface Block {
   chainUuid: string
   height: number
   previousHash: string
-  transactions: Transaction[]
+  transactions: string[] // transaction signatures
   merkleRoot: string
-  achievement: Achievement | null
+  achievement: string // achievement hash
   timestamp: number
   hash: string
 }
 
 export interface Transaction {
   chainUuid: string
+  senderPublicKey: string
   senderAddress: string
   recipientAddress: string
   amount: number
@@ -68,45 +63,47 @@ export interface Transaction {
 
 export interface Achievement {
   chainUuid: string
-  userName: string
-  userPublicKey: string
+  userDisplayName: string
+  userAddress: string
   description: string
   evidenceImage: string
   timestamp: number
-  signature: string
+  hash: string
 }
 
 export interface AchievementVerificationResult {
-  achievementSignature: string
+  achievementHash: string
   message: string
   reward: number
 }
 
-interface ServerEvents {
+export interface ServerEvents {
   register: (user: UserInfo) => void
   "sign in": (user: UserInfo) => void
   "get public chains": () => void
-  "join chain": (chainUuid: string) => void
-  "get chain detail": (chainUuid: string) => void
+  "join chain": (chainUuid: string, address: string) => void
+  "get chain head": (chainUuid: string) => void
+  "get blocks": (chainUuid: string, fromHeight: number, toHeight: number) => void
   "new chain": (chainInfo: ChainInfo) => void
   "new achievement": (achievement: Achievement) => void
   "new block": (block: Block) => void
   "new transaction": (transaction: Transaction) => void
 }
 
-interface ClientEvents {
+export interface ClientEvents {
   error: (message: string) => void
   "register success": () => void
   "sign in success": ({ memberships, chainBriefs }: { memberships: Membership[]; chainBriefs: ChainBrief[] }) => void
   "sign in error": (message: string) => void
   "public chains": (chains: ChainBrief[]) => void
-  "chain detail": (chainDetail: ChainDetail) => void
-  "join chain success": (chainDetail: ChainDetail) => void
+  "join chain success": (chainBrief: ChainBrief, membership: Membership) => void
   "join chain error": (message: string) => void
   "new chain created": () => void
   "achievement verification result": (result: AchievementVerificationResult) => void
   "membership update": (membership: Membership) => void
   "new block created": (block: Block) => void
+  "chain head": (chainHead: ChainHead) => void
+  blocks: (blocks: Block[]) => void
 }
 
 export type Socket = SocketIO<ClientEvents, ServerEvents>

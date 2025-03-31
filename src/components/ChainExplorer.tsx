@@ -1,9 +1,9 @@
 import View from "@/components/View"
 import { Typography, Box, Accordion, AccordionSummary, AccordionDetails, Avatar } from "@mui/material"
 import { PhoneIphone, ExpandMore } from "@mui/icons-material"
-import { ChainDetail } from "@/awesome/api"
 import { User } from "@/awesome/user"
 import { useState, useEffect } from "react"
+import { ChainBrief } from "@/awesome/api"
 
 function getColorFromUUID(uuid: string): string {
   // Generate a hash from the UUID
@@ -17,7 +17,7 @@ function getColorFromUUID(uuid: string): string {
 }
 
 export default function ChainExplorer({ user }: { user: User | null }) {
-  const [chains, setChains] = useState<ChainDetail[]>([])
+  const [chains, setChains] = useState<ChainBrief[]>([])
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -85,19 +85,6 @@ export default function ChainExplorer({ user }: { user: User | null }) {
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                       {chain.info.rule || "No specific rules defined for this chain."}
-                    </Typography>
-                    <Typography variant="subtitle1" sx={{ fontWeight: "bold", mt: 1 }}>
-                      Latest Block
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Height: {chain.recentBlocks[0].height}, Hash: {chain.recentBlocks[0].hash.slice(0, 16)}...
-                      <br />
-                      Achievement: {chain.recentBlocks[0].achievement?.description}
-                      <br />
-                      Creator: {chain.recentBlocks[0].achievement?.userName} [
-                      {chain.recentBlocks[0].achievement?.userPublicKey.slice(0, 8)}...]
-                      <br />
-                      Date: {new Date(chain.recentBlocks[0].timestamp).toLocaleString()}
                     </Typography>
                   </Box>
                 </AccordionDetails>

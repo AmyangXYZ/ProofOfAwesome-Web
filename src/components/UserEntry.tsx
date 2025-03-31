@@ -24,7 +24,7 @@ import {
   VisibilityOff,
 } from "@mui/icons-material"
 import { User } from "@/awesome/user"
-import { Socket, ChainBrief, Membership, UserInfo, ChainDetail } from "@/awesome/api"
+import { Socket, ChainBrief, Membership, UserInfo } from "@/awesome/api"
 import View from "@/components/View"
 
 export default function UserEntry({
@@ -61,12 +61,7 @@ export default function UserEntry({
       "sign in success",
       ({ memberships, chainBriefs }: { memberships: Membership[]; chainBriefs: ChainBrief[] }) => {
         for (const chainBrief of chainBriefs) {
-          userRef.current!.joinChain({
-            info: chainBrief.info,
-            stats: chainBrief.stats,
-            recentBlocks: [],
-            pendingTransactions: [],
-          } satisfies ChainDetail)
+          userRef.current!.addMembership(chainBrief, memberships.find((m) => m.chainUuid === chainBrief.info.uuid)!)
         }
 
         for (const membership of memberships) {
@@ -127,7 +122,6 @@ export default function UserEntry({
       }
       userRef.current = user
       socket.emit("register", {
-        name: user.name,
         publicKey: user.publicKey,
       } satisfies UserInfo)
     } else {
@@ -138,7 +132,6 @@ export default function UserEntry({
       }
       userRef.current = user
       socket.emit("sign in", {
-        name: user.name,
         publicKey: user.publicKey,
       } satisfies UserInfo)
     }

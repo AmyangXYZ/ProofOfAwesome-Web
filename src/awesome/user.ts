@@ -3,7 +3,7 @@ import { BIP32Factory, BIP32Interface } from "bip32"
 import * as ecc from "tiny-secp256k1"
 import { sha256 } from "js-sha256"
 import { Buffer } from "buffer"
-import { Achievement, AchievementVerificationResult, Block, ChainDetail } from "./api"
+import { Achievement, AchievementVerificationResult, Block, ChainBrief, ChainHead, Membership } from "./api"
 
 export class User {
   private _name: string
@@ -11,9 +11,10 @@ export class User {
   private _passphrase: string
   private _publicKey: string = ""
   private wallet: BIP32Interface | null = null
-  private chains: Record<string, ChainDetail> = {}
-  private addresses: Record<string, string> = {}
-  private balances: Record<string, number> = {}
+  private chains: Record<string, ChainBrief> = {}
+  private chainHeads: Record<string, ChainHead> = {}
+  private blocks: Record<string, Block[]> = {}
+  private memberships: Record<string, Membership> = {}
   private achievements: Record<string, Achievement> = {}
   private achievementVerificationResults: Record<string, AchievementVerificationResult> = {}
 
@@ -41,11 +42,11 @@ export class User {
   }
 
   get totalBalance(): number {
-    return Object.values(this.balances).reduce((acc, balance) => acc + balance, 0)
+    return Object.values(this.memberships).reduce((acc, membership) => acc + membership.balance, 0)
   }
 
   public addAchievement(achievement: Achievement) {
-    this.achievements[achievement.signature] = achievement
+    this.achievements[achievement.hash] = achievement
   }
 
   public getAchievement(signature: string): Achievement | null {
@@ -57,7 +58,7 @@ export class User {
   }
 
   public addAchievementVerificationResult(result: AchievementVerificationResult) {
-    this.achievementVerificationResults[result.achievementSignature] = result
+    this.achievementVerificationResults[result.achievementHash] = result
   }
 
   public getAchievementVerificationResult(signature: string): AchievementVerificationResult | null {
@@ -68,82 +69,69 @@ export class User {
     if (!this.wallet) {
       throw new Error("Wallet not created")
     }
-    if (!this.addresses[chainUuid]) {
-      const derivationPath = `m/44'/777'/0'/0/0`
-      const chainKey = this.wallet.derivePath(derivationPath)
+    const derivationPath = `m/44'/777'/0'/0/0`
+    const chainKey = this.wallet.derivePath(derivationPath)
 
-      const publicKeyBuffer = Buffer.from(chainKey.publicKey)
-      const chainUuidBuffer = Buffer.from(chainUuid)
+    const publicKeyBuffer = Buffer.from(chainKey.publicKey)
+    const chainUuidBuffer = Buffer.from(chainUuid)
 
-      const hash = sha256(Buffer.concat([publicKeyBuffer, chainUuidBuffer]))
-      const address = `${hash.substring(0, 40)}`
-      this.addresses[chainUuid] = address
-    }
-    return this.addresses[chainUuid]
+    const hash = sha256(Buffer.concat([publicKeyBuffer, chainUuidBuffer]))
+    return `${hash.substring(0, 40)}`
   }
 
-  public joinChain(chainDetail: ChainDetail): void {
-    const address = this.deriveAddress(chainDetail.info.uuid)
-    this.addresses[chainDetail.info.uuid] = address
-    this.balances[chainDetail.info.uuid] = 0
-    this.chains[chainDetail.info.uuid] = chainDetail
+  public updateChainHead(chainHead: ChainHead): void {
+    this.chainHeads[chainHead.chainUuid] = chainHead
   }
 
-  public getChain(chainUuid: string): ChainDetail | null {
-    return this.chains[chainUuid] || null
+  public addMembership(chainBrief: ChainBrief, membership: Membership): void {
+    this.chains[chainBrief.info.uuid] = chainBrief
+    this.memberships[membership.chainUuid] = membership
   }
 
-  public getChains(): ChainDetail[] {
+  public getChains(): ChainBrief[] {
     return Object.values(this.chains).map((chain) => chain)
   }
 
   public setBalance(chainUuid: string, balance: number): void {
-    this.balances[chainUuid] = balance
+    if (!this.memberships[chainUuid]) {
+      return
+    }
+    this.memberships[chainUuid].balance = balance
   }
 
   public getBalance(chainUuid: string): number {
-    return this.balances[chainUuid]
-  }
-
-  public signAchievement(achievement: Achievement): string {
-    if (!this.wallet) {
-      return ""
+    if (!this.memberships[chainUuid]) {
+      return 0
     }
-    const messageHash = sha256(
-      achievement.chainUuid +
-        achievement.userName +
-        achievement.userPublicKey +
-        achievement.description +
-        achievement.evidenceImage +
-        achievement.timestamp.toString()
-    )
-    return Buffer.from(this.wallet.sign(Buffer.from(messageHash, "hex"))).toString("hex")
+    return this.memberships[chainUuid].balance
   }
 
   public createBlock(chainUuid: string, achievement: Achievement): Block | null {
     if (
       !this.chains[chainUuid] ||
-      !this.achievements[achievement.signature] ||
-      !this.getAchievementVerificationResult(achievement.signature)
+      !this.achievements[achievement.hash] ||
+      !this.getAchievementVerificationResult(achievement.hash)
     ) {
       return null
     }
-    const chain = this.chains[chainUuid]
-
+    const chainHead = this.chainHeads[chainUuid]
+    if (!chainHead) {
+      return null
+    }
     const block = {
       chainUuid,
-      achievement,
-      height: chain.stats.numberOfBlocks,
-      previousHash: chain.recentBlocks[chain.recentBlocks.length - 1].hash,
+      height: chainHead.latestBlockHeight + 1,
+      previousHash: chainHead.latestBlockHash,
       transactions: [],
       merkleRoot: "",
+      achievement: achievement.hash,
       timestamp: Date.now(),
       hash: "",
     } satisfies Block
 
     block.hash = sha256(
       block.chainUuid +
-        block.achievement.signature +
+        block.achievement +
         block.height.toString() +
         block.previousHash +
         block.merkleRoot +
@@ -153,11 +141,16 @@ export class User {
   }
 
   public addBlock(block: Block) {
-    const chain = this.chains[block.chainUuid]
-    if (!chain) {
-      return
+    if (!this.blocks[block.chainUuid]) {
+      this.blocks[block.chainUuid] = []
     }
-    chain.recentBlocks.push(block)
-    chain.stats.numberOfBlocks++
+    this.blocks[block.chainUuid].push(block)
+  }
+
+  public getBlocks(chainUuid: string, count: number): Block[] {
+    if (!this.blocks[chainUuid]) {
+      return []
+    }
+    return this.blocks[chainUuid].slice(-count)
   }
 }

@@ -20,7 +20,7 @@ import {
   AchievementVerificationResult,
   Block,
   ChainBrief,
-  ChainDetail,
+  ChainHead,
   Membership,
   Socket,
 } from "../awesome/api"
@@ -28,6 +28,7 @@ import { useEffect, useRef, useState } from "react"
 import View from "@/components/View"
 import { AddPhotoAlternateOutlined, Close, Info, KeyboardArrowRight, Add, RocketLaunch } from "@mui/icons-material"
 import ChainList from "./ChainList"
+import { sha256 } from "js-sha256"
 
 const prompt = `You are a validator for Proof of Awesome - a blockchain app rewarding real-world achievements with AwesomeCoin. Each chain has its own independent AwesomeCoin rewards that can only be used within that chain. You MUST verify that achievements match the chain's theme and purpose before awarding coins.
 
@@ -106,26 +107,36 @@ export default function Dashboard({
 
   useEffect(() => {
     socket.on("public chains", (chains: ChainBrief[]) => {
-      console.log("public chains", chains)
       if (chains.length > 0) {
         setSelectedChain(chains[0].info.name)
         for (const chain of chains) {
-          socket.emit("join chain", chain.info.uuid)
+          socket.emit("join chain", chain.info.uuid, user.deriveAddress(chain.info.uuid))
         }
       }
     })
 
-    socket.on("join chain success", (chainDetail: ChainDetail) => {
-      user.joinChain(chainDetail)
-      setBalances((prev) => ({ ...prev, [chainDetail.info.uuid]: 0 }))
-      setChains((prev) => [...prev, chainDetail])
+    socket.on("join chain success", (chainBrief: ChainBrief, membership: Membership) => {
+      user.addMembership(chainBrief, membership)
+      setChains(user.getChains())
+      socket.emit("get chain head", chainBrief.info.uuid)
+    })
+
+    socket.on("chain head", (chainHead: ChainHead) => {
+      user.updateChainHead(chainHead)
+      socket.emit("get blocks", chainHead.chainUuid, 0, chainHead.latestBlockHeight)
+    })
+
+    socket.on("blocks", (blocks: Block[]) => {
+      for (const block of blocks) {
+        user.addBlock(block)
+      }
     })
 
     socket.on("achievement verification result", (result: AchievementVerificationResult) => {
       setWaitingVerification(false)
       setAchievementVerificationResult(result)
       if (result.reward > 0) {
-        const achievement = user.getAchievement(result.achievementSignature)
+        const achievement = user.getAchievement(result.achievementHash)
         if (achievement) {
           user.addAchievementVerificationResult(result)
           if (result.reward > 0) {
@@ -140,11 +151,8 @@ export default function Dashboard({
 
     socket.on("new block created", (block: Block) => {
       user.addBlock(block)
-      const chain = user.getChain(block.chainUuid)
-      if (chain) {
-        const sortedBlocks = chain.recentBlocks.sort((a, b) => a.timestamp - b.timestamp)
-        setBlocks(sortedBlocks.slice(-4))
-      }
+      const blocks = user.getBlocks(block.chainUuid, 4)
+      setBlocks(blocks)
     })
 
     socket.on("membership update", (membership: Membership) => {
@@ -163,6 +171,8 @@ export default function Dashboard({
       socket.off("public chains")
       socket.off("new block created")
       socket.off("membership update")
+      socket.off("chain head")
+      socket.off("blocks")
       socket.off("error")
     }
   }, [socket, user])
@@ -226,16 +236,23 @@ export default function Dashboard({
     setAchievementVerificationResult(null)
     setWaitingVerification(true)
     setBlocks([])
+    const chainUuid = chains.find((chain) => chain.info.name === selectedChain)?.info.uuid ?? ""
     const achievement: Achievement = {
-      chainUuid: chains.find((chain) => chain.info.name === selectedChain)?.info.uuid ?? "",
-      userName: user.name,
-      userPublicKey: user.publicKey,
+      chainUuid,
+      userDisplayName: user.name,
+      userAddress: user.deriveAddress(chainUuid),
       description: achievementDescription,
       evidenceImage: achievementEvidence,
       timestamp: Date.now(),
-      signature: "",
+      hash: "",
     }
-    achievement.signature = user.signAchievement(achievement)
+    achievement.hash = sha256(
+      achievement.chainUuid +
+        achievement.userAddress +
+        achievement.description +
+        achievement.evidenceImage +
+        achievement.timestamp.toString()
+    )
     user.addAchievement(achievement)
     socket.emit("new achievement", achievement)
   }
