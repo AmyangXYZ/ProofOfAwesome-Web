@@ -140,7 +140,6 @@ export default function Dashboard({
         if (achievement) {
           if (result.reward > 0) {
             const block = user.createBlock(achievement.chainUuid, achievement)
-            console.log("block", block)
             if (block) {
               socket.emit("new block", block)
             }
@@ -238,7 +237,7 @@ export default function Dashboard({
     const chainUuid = chains.find((chain) => chain.name === selectedChain)?.uuid ?? ""
     const achievement: Achievement = {
       chainUuid,
-      userDisplayName: user.name,
+      userDisplayName: "Anonymous",
       userAddress: user.deriveAddress(chainUuid),
       description: achievementDescription,
       evidenceImage: achievementEvidence,

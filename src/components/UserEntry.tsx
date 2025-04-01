@@ -39,7 +39,6 @@ export default function UserEntry({
   const [mode, setMode] = useState<"new" | "existing">("new")
   const [generatedMnemonic, setGeneratedMnemonic] = useState("")
   const [inputMnemonic, setInputMnemonic] = useState("")
-  const [username, setUsername] = useState("")
   const [passphrase, setPassphrase] = useState("")
   const [showPassphrase, setShowPassphrase] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -88,7 +87,6 @@ export default function UserEntry({
   }, [passphrase])
 
   const resetForm = () => {
-    setUsername("")
     setPassphrase("")
     setGeneratedMnemonic("")
     setInputMnemonic("")
@@ -97,7 +95,7 @@ export default function UserEntry({
 
   const handleSubmit = () => {
     if (mode === "new") {
-      const user = new User(username, generatedMnemonic, passphrase)
+      const user = new User(generatedMnemonic, passphrase)
       if (!user.createWallet()) {
         setError("Invalid mnemonic")
         return
@@ -107,7 +105,7 @@ export default function UserEntry({
         publicKey: user.publicKey,
       } satisfies UserInfo)
     } else {
-      const user = new User(username, inputMnemonic, "")
+      const user = new User(inputMnemonic, passphrase)
       if (!user.createWallet()) {
         setError("Invalid mnemonic")
         return
@@ -175,14 +173,6 @@ export default function UserEntry({
                 </Typography>
               </ToggleButton>
             </ToggleButtonGroup>
-
-            <TextField
-              size="small"
-              label="Username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              fullWidth
-            />
 
             <TextField
               size="small"
@@ -274,7 +264,6 @@ export default function UserEntry({
           onClick={handleSubmit}
           size="large"
           disabled={
-            !username ||
             (mode === "new" && generatedMnemonic.length === 0) ||
             (mode === "existing" && (!inputMnemonic || error !== null))
           }

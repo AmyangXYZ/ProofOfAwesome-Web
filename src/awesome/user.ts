@@ -6,7 +6,6 @@ import { Buffer } from "buffer"
 import { Achievement, AchievementVerificationResult, Block, ChainHead, ChainInfo, Membership } from "./api"
 
 export class User {
-  private _name: string
   private _mnemonic: string
   private _passphrase: string
   private _publicKey: string = ""
@@ -18,8 +17,7 @@ export class User {
   private achievements: Record<string, Achievement> = {}
   private achievementVerificationResults: Record<string, AchievementVerificationResult> = {}
 
-  constructor(name: string, mnemonic: string, passphrase: string) {
-    this._name = name
+  constructor( mnemonic: string, passphrase: string) {
     this._mnemonic = mnemonic
     this._passphrase = passphrase
   }
@@ -33,9 +31,6 @@ export class User {
     return true
   }
 
-  get name(): string {
-    return this._name
-  }
 
   get publicKey(): string {
     return this._publicKey
