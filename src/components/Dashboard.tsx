@@ -19,8 +19,8 @@ import {
   Achievement,
   AchievementVerificationResult,
   Block,
-  ChainBrief,
   ChainHead,
+  ChainInfo,
   Membership,
   Socket,
 } from "../awesome/api"
@@ -90,7 +90,7 @@ export default function Dashboard({
   setCurrentView: (view: "dashboard" | "chainExplorer" | "trade") => void
 }) {
   const topRef = useRef<HTMLDivElement>(null)
-  const [chains, setChains] = useState<ChainBrief[]>([])
+  const [chains, setChains] = useState<ChainInfo[]>([])
   const [achievementDescription, setAchievementDescription] = useState<string>("")
   const achievementInputRef = useRef<HTMLInputElement>(null)
   const [selectedChain, setSelectedChain] = useState<string>("")
@@ -101,28 +101,27 @@ export default function Dashboard({
   const [waitingVerification, setWaitingVerification] = useState<boolean>(false)
   const [showPrompt, setShowPrompt] = useState<boolean>(false)
   const [totalBalance, setTotalBalance] = useState<number>(0)
-  const [balances, setBalances] = useState<Record<string, number>>({})
+  const [memberships, setMemberships] = useState<Record<string, Membership>>({})
   const [blocks, setBlocks] = useState<Block[]>([])
   const [aiMessageAnimationDuration, setAiMessageAnimationDuration] = useState<number>(0.5)
 
   useEffect(() => {
-    socket.on("public chains", (chains: ChainBrief[]) => {
+    socket.on("chains", (chains: ChainInfo[]) => {
       if (chains.length > 0) {
-        setSelectedChain(chains[0].info.name)
+        setSelectedChain(chains[0].name)
+        setChains(chains)
         for (const chain of chains) {
-          socket.emit("join chain", chain.info.uuid, user.deriveAddress(chain.info.uuid))
+          socket.emit("join chain", chain.uuid, user.deriveAddress(chain.uuid))
         }
       }
     })
-
-    socket.on("join chain success", (chainBrief: ChainBrief, membership: Membership) => {
-      user.addMembership(chainBrief, membership)
+    socket.on("chain", (chain: ChainInfo) => {
+      user.setChain(chain)
       setChains(user.getChains())
-      socket.emit("get chain head", chainBrief.info.uuid)
     })
 
     socket.on("chain head", (chainHead: ChainHead) => {
-      user.updateChainHead(chainHead)
+      user.setChainHead(chainHead)
       socket.emit("get blocks", chainHead.chainUuid, 0, chainHead.latestBlockHeight)
     })
 
@@ -135,12 +134,13 @@ export default function Dashboard({
     socket.on("achievement verification result", (result: AchievementVerificationResult) => {
       setWaitingVerification(false)
       setAchievementVerificationResult(result)
+      user.addAchievementVerificationResult(result)
       if (result.reward > 0) {
         const achievement = user.getAchievement(result.achievementHash)
         if (achievement) {
-          user.addAchievementVerificationResult(result)
           if (result.reward > 0) {
             const block = user.createBlock(achievement.chainUuid, achievement)
+            console.log("block", block)
             if (block) {
               socket.emit("new block", block)
             }
@@ -149,15 +149,15 @@ export default function Dashboard({
       }
     })
 
-    socket.on("new block created", (block: Block) => {
+    socket.on("block", (block: Block) => {
       user.addBlock(block)
       const blocks = user.getBlocks(block.chainUuid, 4)
       setBlocks(blocks)
     })
 
-    socket.on("membership update", (membership: Membership) => {
-      user.setBalance(membership.chainUuid, membership.balance)
-      setBalances((prev) => ({ ...prev, [membership.chainUuid]: membership.balance }))
+    socket.on("membership", (membership: Membership) => {
+      user.setMembership(membership)
+      setMemberships((prev) => ({ ...prev, [membership.chainUuid]: membership }))
       setTotalBalance(user.totalBalance)
     })
 
@@ -167,10 +167,9 @@ export default function Dashboard({
 
     return () => {
       socket.off("achievement verification result")
-      socket.off("join chain success")
-      socket.off("public chains")
-      socket.off("new block created")
-      socket.off("membership update")
+      socket.off("chains")
+      socket.off("block")
+      socket.off("membership")
       socket.off("chain head")
       socket.off("blocks")
       socket.off("error")
@@ -236,7 +235,7 @@ export default function Dashboard({
     setAchievementVerificationResult(null)
     setWaitingVerification(true)
     setBlocks([])
-    const chainUuid = chains.find((chain) => chain.info.name === selectedChain)?.info.uuid ?? ""
+    const chainUuid = chains.find((chain) => chain.name === selectedChain)?.uuid ?? ""
     const achievement: Achievement = {
       chainUuid,
       userDisplayName: user.name,
@@ -248,6 +247,7 @@ export default function Dashboard({
     }
     achievement.hash = sha256(
       achievement.chainUuid +
+        achievement.userDisplayName +
         achievement.userAddress +
         achievement.description +
         achievement.evidenceImage +
@@ -422,8 +422,8 @@ export default function Dashboard({
             </Typography>
             <Select size="small" value={selectedChain} onChange={(e) => setSelectedChain(e.target.value)}>
               {chains.map((chain) => (
-                <MenuItem key={chain.info.uuid} value={chain.info.name} sx={{ fontSize: "0.9rem" }}>
-                  {chain.info.name}
+                <MenuItem key={chain.uuid} value={chain.name} sx={{ fontSize: "0.9rem" }}>
+                  {chain.name}
                 </MenuItem>
               ))}
             </Select>
@@ -732,7 +732,7 @@ export default function Dashboard({
                 <Add fontSize="small" />
               </IconButton>
             </Box>
-            <ChainList chains={chains} balances={balances} />
+            <ChainList chains={chains} memberships={memberships} />
           </Box>
         </Box>
       }

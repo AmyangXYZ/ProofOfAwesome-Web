@@ -3,7 +3,7 @@ import { BIP32Factory, BIP32Interface } from "bip32"
 import * as ecc from "tiny-secp256k1"
 import { sha256 } from "js-sha256"
 import { Buffer } from "buffer"
-import { Achievement, AchievementVerificationResult, Block, ChainBrief, ChainHead, Membership } from "./api"
+import { Achievement, AchievementVerificationResult, Block, ChainHead, ChainInfo, Membership } from "./api"
 
 export class User {
   private _name: string
@@ -11,7 +11,7 @@ export class User {
   private _passphrase: string
   private _publicKey: string = ""
   private wallet: BIP32Interface | null = null
-  private chains: Record<string, ChainBrief> = {}
+  private chains: Record<string, ChainInfo> = {}
   private chainHeads: Record<string, ChainHead> = {}
   private blocks: Record<string, Block[]> = {}
   private memberships: Record<string, Membership> = {}
@@ -61,8 +61,8 @@ export class User {
     this.achievementVerificationResults[result.achievementHash] = result
   }
 
-  public getAchievementVerificationResult(signature: string): AchievementVerificationResult | null {
-    return this.achievementVerificationResults[signature] || null
+  public getAchievementVerificationResult(achievementHash: string): AchievementVerificationResult | null {
+    return this.achievementVerificationResults[achievementHash] || null
   }
 
   public deriveAddress(chainUuid: string): string {
@@ -79,31 +79,27 @@ export class User {
     return `${hash.substring(0, 40)}`
   }
 
-  public updateChainHead(chainHead: ChainHead): void {
-    this.chainHeads[chainHead.chainUuid] = chainHead
+  public getMembership(chainUuid: string): Membership | null {
+    return this.memberships[chainUuid]
   }
 
-  public addMembership(chainBrief: ChainBrief, membership: Membership): void {
-    this.chains[chainBrief.info.uuid] = chainBrief
+  public setMembership(membership: Membership): void {
     this.memberships[membership.chainUuid] = membership
   }
 
-  public getChains(): ChainBrief[] {
+  public setChain(chain: ChainInfo): void {
+    this.chains[chain.uuid] = chain
+  }
+
+  public getChains(): ChainInfo[] {
     return Object.values(this.chains).map((chain) => chain)
   }
-
-  public setBalance(chainUuid: string, balance: number): void {
-    if (!this.memberships[chainUuid]) {
-      return
-    }
-    this.memberships[chainUuid].balance = balance
+  public getChainHead(chainUuid: string): ChainHead {
+    return this.chainHeads[chainUuid]
   }
 
-  public getBalance(chainUuid: string): number {
-    if (!this.memberships[chainUuid]) {
-      return 0
-    }
-    return this.memberships[chainUuid].balance
+  public setChainHead(chainHead: ChainHead): void {
+    this.chainHeads[chainHead.chainUuid] = chainHead
   }
 
   public createBlock(chainUuid: string, achievement: Achievement): Block | null {

@@ -3,7 +3,7 @@ import { Typography, Box, Accordion, AccordionSummary, AccordionDetails, Avatar 
 import { PhoneIphone, ExpandMore } from "@mui/icons-material"
 import { User } from "@/awesome/user"
 import { useState, useEffect } from "react"
-import { ChainBrief } from "@/awesome/api"
+import { ChainHead, ChainInfo } from "@/awesome/api"
 
 function getColorFromUUID(uuid: string): string {
   // Generate a hash from the UUID
@@ -17,14 +17,17 @@ function getColorFromUUID(uuid: string): string {
 }
 
 export default function ChainExplorer({ user }: { user: User | null }) {
-  const [chains, setChains] = useState<ChainBrief[]>([])
+  const [chainInfos, setChainInfos] = useState<ChainInfo[]>([])
+  const [chainHeads, setChainHeads] = useState<ChainHead[]>([])
 
   useEffect(() => {
     const interval = setInterval(() => {
       if (user) {
         const userChains = user.getChains()
         if (userChains.length > 0) {
-          setChains(userChains.sort((a, b) => b.stats.numberOfBlocks - a.stats.numberOfBlocks))
+          setChainInfos(userChains)
+          setChainHeads(userChains.map((chain) => user.getChainHead(chain.uuid)))
+
           clearInterval(interval)
         }
       }
@@ -38,36 +41,36 @@ export default function ChainExplorer({ user }: { user: User | null }) {
       title="Chain Explorer"
       content={
         <Box sx={{ p: 0, display: "flex", flexDirection: "column", gap: 2 }}>
-          {chains.length === 0 ? (
+          {chainInfos.length === 0 ? (
             <Box sx={{ textAlign: "center", py: 2 }}>
               <Typography color="text.secondary">No chains available</Typography>
             </Box>
           ) : (
-            chains.map((chain) => (
-              <Accordion key={chain.info.uuid}>
+            chainInfos.map((chain) => (
+              <Accordion key={chain.uuid}>
                 <AccordionSummary expandIcon={<ExpandMore />}>
                   <Box sx={{ display: "flex", flexDirection: "row", gap: 1.5, alignItems: "center", width: "95%" }}>
                     <Avatar
                       sx={{
                         width: 28,
                         height: 28,
-                        bgcolor: getColorFromUUID(chain.info.uuid),
+                        bgcolor: getColorFromUUID(chain.uuid),
                       }}
-                      src={chain.info.logoUrl}
+                      src={chain.logoUrl}
                     >
-                      {chain.info.name[0]}
+                      {chain.name[0]}
                     </Avatar>
                     <Box sx={{ display: "flex", flexDirection: "column", gap: 0, flexGrow: 1 }}>
                       <Typography variant="subtitle2" sx={{ fontWeight: "bold" }}>
-                        {chain.info.name}
+                        {chain.name}
                       </Typography>
                     </Box>
                     <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
                       <Typography variant="body2" color="text.secondary">
-                        {chain.stats.numberOfBlocks} blocks
+                        {chainHeads.find((head) => head.chainUuid === chain.uuid)?.numberOfBlocks} blocks
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        {chain.stats.numberOfUsers} members
+                        {chainHeads.find((head) => head.chainUuid === chain.uuid)?.numberOfUsers} members
                       </Typography>
                     </Box>
                   </Box>
@@ -78,13 +81,13 @@ export default function ChainExplorer({ user }: { user: User | null }) {
                       Description
                     </Typography>
                     <Typography variant="body1" color="text.secondary">
-                      {chain.info.description}
+                      {chain.description}
                     </Typography>
                     <Typography variant="subtitle1" sx={{ fontWeight: "bold", mt: 1 }}>
                       Rules
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      {chain.info.rule || "No specific rules defined for this chain."}
+                      {chain.rule || "No specific rules defined for this chain."}
                     </Typography>
                   </Box>
                 </AccordionDetails>

@@ -1,5 +1,5 @@
 import { Avatar, Box, Typography } from "@mui/material"
-import { ChainBrief } from "../awesome/api"
+import { ChainInfo, Membership } from "../awesome/api"
 
 function getColorFromUUID(uuid: string): string {
   // Generate a hash from the UUID
@@ -12,12 +12,18 @@ function getColorFromUUID(uuid: string): string {
   return `hsl(${hue}, 70%, 45%)`
 }
 
-export default function ChainList({ chains, balances }: { chains: ChainBrief[]; balances: Record<string, number> }) {
+export default function ChainList({
+  chains,
+  memberships,
+}: {
+  chains: ChainInfo[]
+  memberships: Record<string, Membership>
+}) {
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
       {chains.map((chain) => (
         <Box
-          key={chain.info.uuid}
+          key={chain.uuid}
           sx={{
             display: "flex",
             flexDirection: "row",
@@ -35,15 +41,15 @@ export default function ChainList({ chains, balances }: { chains: ChainBrief[]; 
               sx={{
                 width: 28,
                 height: 28,
-                bgcolor: getColorFromUUID(chain.info.uuid),
+                bgcolor: getColorFromUUID(chain.uuid),
               }}
-              src={chain.info.logoUrl}
+              src={chain.logoUrl}
             >
-              {chain.info.name[0]}
+              {chain.name[0]}
             </Avatar>
             <Box sx={{ display: "flex", flexDirection: "column", gap: 0 }}>
               <Typography variant="subtitle2" sx={{ fontWeight: "bold" }}>
-                {chain.info.name}
+                {chain.name}
               </Typography>
               <Typography
                 variant="caption"
@@ -52,7 +58,7 @@ export default function ChainList({ chains, balances }: { chains: ChainBrief[]; 
                   lineHeight: 1.2,
                 }}
               >
-                {chain.info.description?.split(/[,.!]/)[0] || ""}
+                {chain.description?.split(/[,.!]/)[0] || ""}
               </Typography>
             </Box>
           </Box>
@@ -68,7 +74,7 @@ export default function ChainList({ chains, balances }: { chains: ChainBrief[]; 
             }}
           >
             <Typography variant="body2" color="black" sx={{ fontSize: "0.8rem" }}>
-              {balances[chain.info.uuid] || 0}
+              {memberships[chain.uuid]?.balance || 0}
             </Typography>
           </Box>
         </Box>

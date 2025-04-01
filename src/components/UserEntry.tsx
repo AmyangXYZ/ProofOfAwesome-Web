@@ -24,7 +24,7 @@ import {
   VisibilityOff,
 } from "@mui/icons-material"
 import { User } from "@/awesome/user"
-import { Socket, ChainBrief, Membership, UserInfo } from "@/awesome/api"
+import { Socket, UserInfo } from "@/awesome/api"
 import View from "@/components/View"
 
 export default function UserEntry({
@@ -57,35 +57,17 @@ export default function UserEntry({
       socket.emit("get public chains")
     })
 
-    socket.on(
-      "sign in success",
-      ({ memberships, chainBriefs }: { memberships: Membership[]; chainBriefs: ChainBrief[] }) => {
-        for (const chainBrief of chainBriefs) {
-          userRef.current!.addMembership(chainBrief, memberships.find((m) => m.chainUuid === chainBrief.info.uuid)!)
-        }
-
-        for (const membership of memberships) {
-          userRef.current!.setBalance(membership.chainUuid, membership.balance)
-        }
-
-        setUser(userRef.current)
-        userRef.current = null
-        resetForm()
-        setIsOnboarded(true)
-        socket.emit("get public chains")
-      }
-    )
-
-    socket.on("sign in error", (error: string) => {
-      setError(error)
+    socket.on("sign in success", () => {
+      setUser(userRef.current)
       userRef.current = null
-      setIsOnboarded(false)
+      resetForm()
+      setIsOnboarded(true)
+      socket.emit("get public chains")
     })
 
     return () => {
       socket.off("register success")
       socket.off("sign in success")
-      socket.off("sign in error")
     }
   }, [socket, setUser, setIsOnboarded])
 

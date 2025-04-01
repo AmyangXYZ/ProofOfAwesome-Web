@@ -17,20 +17,11 @@ export interface ChainHead {
   chainUuid: string
   latestBlockHash: string
   latestBlockHeight: number
-  timestamp: number
-}
-
-export interface ChainStats {
-  chainUuid: string
   capitalization: number
   numberOfUsers: number
   numberOfBlocks: number
   numberOfTransactions: number
-}
-
-export interface ChainBrief {
-  info: ChainInfo
-  stats: ChainStats
+  timestamp: number
 }
 
 export interface Membership {
@@ -81,9 +72,17 @@ export interface ServerEvents {
   register: (user: UserInfo) => void
   "sign in": (user: UserInfo) => void
   "get public chains": () => void
-  "join chain": (chainUuid: string, address: string) => void
+  "get membership": (userPublicKey: string, chainUuid: string) => void
+  "get memberships": (userPublicKey: string) => void
   "get chain head": (chainUuid: string) => void
+  "get chain heads": (chainUuids: string[]) => void
   "get blocks": (chainUuid: string, fromHeight: number, toHeight: number) => void
+  "get block": (chainUuid: string, blockHeight: number) => void
+  "get achievements": (chainUuid: string, fromBlockHeight: number, toBlockHeight: number) => void
+  "get achievement": (chainUuid: string, achievementHash: string) => void
+  "get transactions": (chainUuid: string, blockHeight: number) => void
+  "get transaction": (chainUuid: string, transactionSignature: string) => void
+  "join chain": (chainUuid: string, address: string) => void
   "new chain": (chainInfo: ChainInfo) => void
   "new achievement": (achievement: Achievement) => void
   "new block": (block: Block) => void
@@ -93,17 +92,20 @@ export interface ServerEvents {
 export interface ClientEvents {
   error: (message: string) => void
   "register success": () => void
-  "sign in success": ({ memberships, chainBriefs }: { memberships: Membership[]; chainBriefs: ChainBrief[] }) => void
-  "sign in error": (message: string) => void
-  "public chains": (chains: ChainBrief[]) => void
-  "join chain success": (chainBrief: ChainBrief, membership: Membership) => void
-  "join chain error": (message: string) => void
-  "new chain created": () => void
-  "achievement verification result": (result: AchievementVerificationResult) => void
-  "membership update": (membership: Membership) => void
-  "new block created": (block: Block) => void
+  "sign in success": () => void
+  chains: (chains: ChainInfo[]) => void
+  chain: (chain: ChainInfo) => void
   "chain head": (chainHead: ChainHead) => void
+  "chain heads": (chainHeads: ChainHead[]) => void
+  memberships: (memberships: Membership[]) => void
+  membership: (membership: Membership) => void
   blocks: (blocks: Block[]) => void
+  block: (block: Block) => void
+  achievements: (achievements: Achievement[]) => void
+  achievement: (achievement: Achievement) => void
+  "achievement verification result": (result: AchievementVerificationResult) => void
+  transactions: (transactions: Transaction[]) => void
+  transaction: (transaction: Transaction) => void
 }
 
 export type Socket = SocketIO<ClientEvents, ServerEvents>
