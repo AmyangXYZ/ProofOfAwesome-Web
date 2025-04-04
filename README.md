@@ -17,6 +17,8 @@ A blockchain-inspired social platform that transforms real-world achievements in
 - 🔍 **Real-Time Block Creation**: Watch your achievements become blocks in an actual blockchain
 - 🌐 **Public & Private Chains**: Participate in public communities or create private chains for specific groups
 - 📱 **Cross-Platform**: Access via web app or dedicated iOS application
+- 💹 **AwesomeCoin Market**: Trade earned tokens with community-driven price discovery
+- 📊 **Portfolio Management**: Track your AwesomeCoin balance and token holdings value
 
 ## 💡 Platform Experience
 
@@ -42,6 +44,15 @@ Our AI verification analyzes your achievements based on:
 - **Real-Time Updates**: Watch your achievements transform into blocks in real-time
 - **Social Elements**: View and interact with achievements from your network
 - **Achievement Streaks**: Build consistent habits by maintaining blockchain-verified activity
+
+### Market System
+
+- **Token Trading**: Exchange achievement tokens through an efficient order matching system
+- **Server Reserve**: Stable market maker ensuring consistent liquidity
+- **Portfolio Tracking**: Monitor your AwesomeCoin balance and token values over time
+- **Order Book**: Place and track buy/sell orders with partial filling support
+- **Real-Time Pricing**: Watch market prices update based on community trading activity
+- **Achievement Value**: See your accomplishments gain real utility through market dynamics
 
 ## 📱 Platform Support
 
@@ -99,5 +110,10 @@ Built using a modern tech stack:
 - Mobile app for Android
 - Advanced governance models for community chains
 - Integration with existing fitness and productivity apps
+- Community review system for achievement validation
+- Advanced market features (price alerts, advanced orders)
+- Premium features for power users
+- Enhanced analytics and trading insights
+- Private group achievements with custom validation rules
 
 ---

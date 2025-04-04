@@ -103,6 +103,7 @@ export default function Dashboard({
   const [totalBalance, setTotalBalance] = useState<number>(0)
   const [memberships, setMemberships] = useState<Record<string, Membership>>({})
   const [blocks, setBlocks] = useState<Block[]>([])
+  const currentBlockRef = useRef<Block | null>(null)
   const [aiMessageAnimationDuration, setAiMessageAnimationDuration] = useState<number>(0.5)
 
   useEffect(() => {
@@ -141,6 +142,7 @@ export default function Dashboard({
           if (result.reward > 0) {
             const block = user.createBlock(achievement.chainUuid, achievement)
             if (block) {
+              currentBlockRef.current = block
               socket.emit("new block", block)
             }
           }
@@ -150,14 +152,20 @@ export default function Dashboard({
 
     socket.on("block", (block: Block) => {
       user.addBlock(block)
-      const blocks = user.getBlocks(block.chainUuid, 4)
-      setBlocks(blocks)
     })
 
     socket.on("membership", (membership: Membership) => {
       user.setMembership(membership)
       setMemberships((prev) => ({ ...prev, [membership.chainUuid]: membership }))
       setTotalBalance(user.totalBalance)
+    })
+
+    socket.on("new block accepted", () => {
+      if (currentBlockRef.current) {
+        user.addBlock(currentBlockRef.current)
+        setBlocks(user.getBlocks(currentBlockRef.current.chainUuid, 4))
+        currentBlockRef.current = null
+      }
     })
 
     socket.on("error", (message: string) => {
@@ -171,6 +179,7 @@ export default function Dashboard({
       socket.off("membership")
       socket.off("chain head")
       socket.off("blocks")
+      socket.off("new block accepted")
       socket.off("error")
     }
   }, [socket, user])
@@ -260,7 +269,7 @@ export default function Dashboard({
     if (achievementVerificationResult && verificationResultRef.current) {
       const wordCount = achievementVerificationResult.message.split(" ").length
       const baseDelay = 0.5 // Initial delay
-      const wordDelay = 0.08 // Delay per word
+      const wordDelay = 0.05 // Delay per word
       const buffer = 0.5 // Buffer time after last word
       const totalDuration = baseDelay + wordCount * wordDelay + buffer
       setAiMessageAnimationDuration(totalDuration)
@@ -521,7 +530,7 @@ export default function Dashboard({
                       opacity: 0,
                       mr: "4px",
                       animation: "typeWord 0.05s ease-in-out forwards",
-                      animationDelay: `${0.5 + index * 0.08}s`,
+                      animationDelay: `${0.5 + index * 0.05}s`,
                       "@keyframes typeWord": {
                         from: {
                           opacity: 0,
