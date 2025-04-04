@@ -15,18 +15,10 @@ import {
 } from "@mui/material"
 import Image from "next/image"
 import { User } from "../awesome/user"
-import {
-  Achievement,
-  AchievementVerificationResult,
-  Block,
-  ChainHead,
-  ChainInfo,
-  Membership,
-  Socket,
-} from "../awesome/api"
+import { Achievement, Review, Block, ChainHead, Membership, Socket, ChainBrief } from "../awesome/api"
 import { useEffect, useRef, useState } from "react"
 import View from "@/components/View"
-import { AddPhotoAlternateOutlined, Close, Info, KeyboardArrowRight, Add, RocketLaunch } from "@mui/icons-material"
+import { AddPhotoAlternateOutlined, Close, Info, KeyboardArrowRight, RocketLaunch } from "@mui/icons-material"
 import ChainList from "./ChainList"
 import { sha256 } from "js-sha256"
 
@@ -80,44 +72,36 @@ VALIDATION RULES:
      ▸ Demonstrate consistency or habit formation
      ▸ Show effort or overcoming challenges`
 
-export default function Dashboard({
-  socket,
-  user,
-  setCurrentView,
-}: {
-  socket: Socket
-  user: User
-  setCurrentView: (view: "dashboard" | "chainExplorer" | "trade") => void
-}) {
+export default function Dashboard({ socket, user }: { socket: Socket; user: User }) {
   const topRef = useRef<HTMLDivElement>(null)
-  const [chains, setChains] = useState<ChainInfo[]>([])
+  const [chains, setChains] = useState<ChainBrief[]>([])
   const [achievementDescription, setAchievementDescription] = useState<string>("")
   const achievementInputRef = useRef<HTMLInputElement>(null)
   const [selectedChain, setSelectedChain] = useState<string>("")
   const [achievementEvidence, setAchievementEvidence] = useState<string>("")
-  const [achievementVerificationResult, setAchievementVerificationResult] =
-    useState<AchievementVerificationResult | null>(null)
-  const verificationResultRef = useRef<HTMLDivElement>(null)
+  const [review, setReview] = useState<Review | null>(null)
+  const reviewDomRef = useRef<HTMLDivElement>(null)
   const [waitingVerification, setWaitingVerification] = useState<boolean>(false)
   const [showPrompt, setShowPrompt] = useState<boolean>(false)
-  const [totalBalance, setTotalBalance] = useState<number>(0)
+  const [netWorth, setNetWorth] = useState<number>(0)
   const [memberships, setMemberships] = useState<Record<string, Membership>>({})
   const [blocks, setBlocks] = useState<Block[]>([])
   const currentBlockRef = useRef<Block | null>(null)
   const [aiMessageAnimationDuration, setAiMessageAnimationDuration] = useState<number>(0.5)
 
   useEffect(() => {
-    socket.on("chains", (chains: ChainInfo[]) => {
-      if (chains.length > 0) {
-        setSelectedChain(chains[0].name)
-        setChains(chains)
-        for (const chain of chains) {
-          socket.emit("join chain", chain.uuid, user.deriveAddress(chain.uuid))
+    socket.on("chain briefs", (chainBriefs: ChainBrief[]) => {
+      if (chainBriefs.length > 0) {
+        setSelectedChain(chainBriefs[0].info.name)
+        setChains(chainBriefs)
+        for (const brief of chainBriefs) {
+          user.setChainBrief(brief)
+          socket.emit("join chain", brief.info.uuid, user.deriveAddress(brief.info.uuid))
         }
       }
     })
-    socket.on("chain", (chain: ChainInfo) => {
-      user.setChain(chain)
+    socket.on("chain brief", (chainBrief: ChainBrief) => {
+      user.setChain(chainBrief.info)
       setChains(user.getChains())
     })
 
@@ -132,19 +116,21 @@ export default function Dashboard({
       }
     })
 
-    socket.on("achievement verification result", (result: AchievementVerificationResult) => {
+    socket.on("achievement reviews", (reviews: Review[]) => {
       setWaitingVerification(false)
-      setAchievementVerificationResult(result)
-      user.addAchievementVerificationResult(result)
-      if (result.reward > 0) {
-        const achievement = user.getAchievement(result.achievementHash)
+      if (reviews.length == 0) {
+        return
+      }
+      const review = reviews[0]
+      setReview(review)
+      user.addReview(review)
+      if (review.reward > 0) {
+        const achievement = user.getAchievement(review.achievementSignature)
         if (achievement) {
-          if (result.reward > 0) {
-            const block = user.createBlock(achievement.chainUuid, achievement)
-            if (block) {
-              currentBlockRef.current = block
-              socket.emit("new block", block)
-            }
+          const block = user.createBlock(achievement.chainUuid, achievement)
+          if (block) {
+            currentBlockRef.current = block
+            socket.emit("new block", block)
           }
         }
       }
@@ -157,7 +143,7 @@ export default function Dashboard({
     socket.on("membership", (membership: Membership) => {
       user.setMembership(membership)
       setMemberships((prev) => ({ ...prev, [membership.chainUuid]: membership }))
-      setTotalBalance(user.totalBalance)
+      setNetWorth(user.netWorth)
     })
 
     socket.on("new block accepted", () => {
@@ -173,10 +159,9 @@ export default function Dashboard({
     })
 
     return () => {
-      socket.off("achievement verification result")
-      socket.off("chains")
-      socket.off("block")
-      socket.off("membership")
+      socket.off("achievement reviews")
+      socket.off("chain briefs")
+      socket.off("chain brief")
       socket.off("chain head")
       socket.off("blocks")
       socket.off("new block accepted")
@@ -240,22 +225,22 @@ export default function Dashboard({
   }
 
   const submitAchievement = () => {
-    setAchievementVerificationResult(null)
+    setReview(null)
     setWaitingVerification(true)
     setBlocks([])
-    const chainUuid = chains.find((chain) => chain.name === selectedChain)?.uuid ?? ""
+    const chainUuid = chains.find((chain) => chain.info.name === selectedChain)?.info.uuid ?? ""
     const achievement: Achievement = {
       chainUuid,
-      userDisplayName: "Anonymous",
+      userPublicKey: user.publicKey,
       userAddress: user.deriveAddress(chainUuid),
       description: achievementDescription,
       evidenceImage: achievementEvidence,
       timestamp: Date.now(),
-      hash: "",
+      signature: "",
     }
-    achievement.hash = sha256(
+    achievement.signature = sha256(
       achievement.chainUuid +
-        achievement.userDisplayName +
+        achievement.userPublicKey +
         achievement.userAddress +
         achievement.description +
         achievement.evidenceImage +
@@ -266,20 +251,20 @@ export default function Dashboard({
   }
 
   useEffect(() => {
-    if (achievementVerificationResult && verificationResultRef.current) {
-      const wordCount = achievementVerificationResult.message.split(" ").length
+    if (review && reviewDomRef.current) {
+      const wordCount = review.comment.split(" ").length
       const baseDelay = 0.5 // Initial delay
       const wordDelay = 0.05 // Delay per word
       const buffer = 0.5 // Buffer time after last word
       const totalDuration = baseDelay + wordCount * wordDelay + buffer
       setAiMessageAnimationDuration(totalDuration)
 
-      verificationResultRef.current?.scrollIntoView({
+      reviewDomRef.current?.scrollIntoView({
         behavior: "smooth",
         block: "start",
       })
     }
-  }, [achievementVerificationResult])
+  }, [review])
 
   return (
     <View
@@ -306,7 +291,7 @@ export default function Dashboard({
                   color: "warning.main",
                 }}
               >
-                {totalBalance}
+                {netWorth}
               </Typography>
               <Typography
                 variant="subtitle1"
@@ -347,6 +332,34 @@ export default function Dashboard({
                 }}
               >
                 RECEIVE
+              </Button>
+              <Button
+                variant="contained"
+                size="small"
+                color="warning"
+                sx={{
+                  minWidth: "50px",
+                  py: 0.25,
+                  borderRadius: 4,
+                  fontSize: "0.72rem",
+                  fontWeight: "bold",
+                }}
+              >
+                BUY
+              </Button>
+              <Button
+                variant="contained"
+                size="small"
+                color="warning"
+                sx={{
+                  minWidth: "50px",
+                  py: 0.25,
+                  borderRadius: 4,
+                  fontSize: "0.72rem",
+                  fontWeight: "bold",
+                }}
+              >
+                SELL
               </Button>
             </Box>
           </Box>
@@ -430,8 +443,8 @@ export default function Dashboard({
             </Typography>
             <Select size="small" value={selectedChain} onChange={(e) => setSelectedChain(e.target.value)}>
               {chains.map((chain) => (
-                <MenuItem key={chain.uuid} value={chain.name} sx={{ fontSize: "0.9rem" }}>
-                  {chain.name}
+                <MenuItem key={chain.info.uuid} value={chain.info.name} sx={{ fontSize: "0.9rem" }}>
+                  {chain.info.name}
                 </MenuItem>
               ))}
             </Select>
@@ -485,9 +498,9 @@ export default function Dashboard({
             </DialogContent>
           </Dialog>
 
-          {achievementVerificationResult && (
+          {review && (
             <Box
-              ref={verificationResultRef}
+              ref={reviewDomRef}
               sx={{
                 width: "100%",
               }}
@@ -517,11 +530,11 @@ export default function Dashboard({
                     },
                   },
                 }}
-                color={achievementVerificationResult.reward > 0 ? "success" : "error"}
+                color={review.reward > 0 ? "success" : "error"}
                 textAlign="start"
               >
-                {achievementVerificationResult.reward > 0 ? "✅ " : "❌ "}
-                {achievementVerificationResult.message.split(" ").map((word, index) => (
+                {review.reward > 0 ? "✅ " : "❌ "}
+                {review.comment.split(" ").map((word, index) => (
                   <Box
                     key={index}
                     component="span"
@@ -699,7 +712,7 @@ export default function Dashboard({
                         // Clear states first
                         setAchievementDescription("")
                         setAchievementEvidence("")
-                        setAchievementVerificationResult(null)
+                        setReview(null)
                         setBlocks([])
 
                         setTimeout(() => {
@@ -736,9 +749,6 @@ export default function Dashboard({
               <Typography variant="subtitle1" sx={{ fontWeight: "bold", display: "flex", alignItems: "center" }}>
                 My Chains <KeyboardArrowRight fontSize="small" sx={{ color: "text.secondary" }} />
               </Typography>
-              <IconButton size="small" onClick={() => setCurrentView("chainExplorer")}>
-                <Add fontSize="small" />
-              </IconButton>
             </Box>
             <ChainList chains={chains} memberships={memberships} />
           </Box>

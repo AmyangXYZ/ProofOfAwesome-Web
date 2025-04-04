@@ -3,7 +3,7 @@ import { Typography, Box, Accordion, AccordionSummary, AccordionDetails, Avatar 
 import { PhoneIphone, ExpandMore } from "@mui/icons-material"
 import { User } from "@/awesome/user"
 import { useState, useEffect } from "react"
-import { ChainHead, ChainInfo } from "@/awesome/api"
+import { ChainBrief } from "@/awesome/api"
 
 function getColorFromUUID(uuid: string): string {
   // Generate a hash from the UUID
@@ -17,16 +17,14 @@ function getColorFromUUID(uuid: string): string {
 }
 
 export default function ChainExplorer({ user }: { user: User | null }) {
-  const [chainInfos, setChainInfos] = useState<ChainInfo[]>([])
-  const [chainHeads, setChainHeads] = useState<ChainHead[]>([])
+  const [chainBriefs, setChainBriefs] = useState<ChainBrief[]>([])
 
   useEffect(() => {
     const interval = setInterval(() => {
       if (user) {
         const userChains = user.getChains()
         if (userChains.length > 0) {
-          setChainInfos(userChains)
-          setChainHeads(userChains.map((chain) => user.getChainHead(chain.uuid)))
+          setChainBriefs(userChains)
 
           clearInterval(interval)
         }
@@ -41,53 +39,67 @@ export default function ChainExplorer({ user }: { user: User | null }) {
       title="Chain Explorer"
       content={
         <Box sx={{ p: 0, display: "flex", flexDirection: "column", gap: 2 }}>
-          {chainInfos.length === 0 ? (
+          {chainBriefs.length === 0 ? (
             <Box sx={{ textAlign: "center", py: 2 }}>
               <Typography color="text.secondary">No chains available</Typography>
             </Box>
           ) : (
-            chainInfos.map((chain) => (
-              <Accordion key={chain.uuid}>
+            chainBriefs.map((brief) => (
+              <Accordion key={brief.info.uuid}>
                 <AccordionSummary expandIcon={<ExpandMore />}>
                   <Box sx={{ display: "flex", flexDirection: "row", gap: 1.5, alignItems: "center", width: "95%" }}>
                     <Avatar
                       sx={{
                         width: 28,
                         height: 28,
-                        bgcolor: getColorFromUUID(chain.uuid),
+                        bgcolor: getColorFromUUID(brief.info.uuid),
                       }}
-                      src={chain.logoUrl}
+                      src={brief.info.logoUrl}
                     >
-                      {chain.name[0]}
+                      {brief.info.name[0]}
                     </Avatar>
                     <Box sx={{ display: "flex", flexDirection: "column", gap: 0, flexGrow: 1 }}>
                       <Typography variant="subtitle2" sx={{ fontWeight: "bold" }}>
-                        {chain.name}
+                        {brief.info.name}
                       </Typography>
                     </Box>
-                    <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+                    <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
                       <Typography variant="body2" color="text.secondary">
-                        {chainHeads.find((head) => head.chainUuid === chain.uuid)?.numberOfBlocks} blocks
+                        {brief.stats.numBlocks} blocks
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        {chainHeads.find((head) => head.chainUuid === chain.uuid)?.numberOfUsers} members
+                        {brief.stats.numMembers} members
                       </Typography>
                     </Box>
                   </Box>
                 </AccordionSummary>
                 <AccordionDetails>
                   <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: "bold", mt: 1 }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
                       Description
                     </Typography>
-                    <Typography variant="body1" color="text.secondary">
-                      {chain.description}
+                    <Typography variant="body2" color="text.secondary">
+                      {brief.info.description}
                     </Typography>
-                    <Typography variant="subtitle1" sx={{ fontWeight: "bold", mt: 1 }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
                       Rules
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      {chain.rule || "No specific rules defined for this chain."}
+                      {brief.info.rule || "No specific rules defined for this chain."}
+                    </Typography>
+                    <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
+                      Market Cap
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {brief.stats.marketCap * brief.stats.price} AC ({brief.stats.marketCap} tokens,{" "}
+                      {brief.stats.price}
+                      AC / token)
+                    </Typography>
+                    <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
+                      Latest block
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Height: {brief.head.latestBlockHeight}. Hash: {brief.head.latestBlockHash.slice(0, 24)}...
                     </Typography>
                   </Box>
                 </AccordionDetails>

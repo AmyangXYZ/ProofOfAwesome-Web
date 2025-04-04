@@ -24,7 +24,7 @@ import {
   VisibilityOff,
 } from "@mui/icons-material"
 import { User } from "@/awesome/user"
-import { Socket, UserInfo } from "@/awesome/api"
+import { Socket } from "@/awesome/api"
 import View from "@/components/View"
 
 export default function UserEntry({
@@ -53,7 +53,7 @@ export default function UserEntry({
 
       resetForm()
       setIsOnboarded(true)
-      socket.emit("get public chains")
+      socket.emit("get chains")
     })
 
     socket.on("sign in success", () => {
@@ -61,7 +61,7 @@ export default function UserEntry({
       userRef.current = null
       resetForm()
       setIsOnboarded(true)
-      socket.emit("get public chains")
+      socket.emit("get chains")
     })
 
     return () => {
@@ -101,9 +101,7 @@ export default function UserEntry({
         return
       }
       userRef.current = user
-      socket.emit("register", {
-        publicKey: user.publicKey,
-      } satisfies UserInfo)
+      socket.emit("register", user.publicKey)
     } else {
       const user = new User(inputMnemonic, passphrase)
       if (!user.createWallet()) {
@@ -111,9 +109,7 @@ export default function UserEntry({
         return
       }
       userRef.current = user
-      socket.emit("sign in", {
-        publicKey: user.publicKey,
-      } satisfies UserInfo)
+      socket.emit("sign in", user.publicKey)
     }
   }
 

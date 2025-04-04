@@ -1,5 +1,5 @@
 import { Avatar, Box, Typography } from "@mui/material"
-import { ChainInfo, Membership } from "../awesome/api"
+import { ChainBrief, Membership } from "../awesome/api"
 
 function getColorFromUUID(uuid: string): string {
   // Generate a hash from the UUID
@@ -16,14 +16,14 @@ export default function ChainList({
   chains,
   memberships,
 }: {
-  chains: ChainInfo[]
+  chains: ChainBrief[]
   memberships: Record<string, Membership>
 }) {
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
       {chains.map((chain) => (
         <Box
-          key={chain.uuid}
+          key={chain.info.uuid}
           sx={{
             display: "flex",
             flexDirection: "row",
@@ -41,15 +41,15 @@ export default function ChainList({
               sx={{
                 width: 28,
                 height: 28,
-                bgcolor: getColorFromUUID(chain.uuid),
+                bgcolor: getColorFromUUID(chain.info.uuid),
               }}
-              src={chain.logoUrl}
+              src={chain.info.logoUrl}
             >
-              {chain.name[0]}
+              {chain.info.name[0]}
             </Avatar>
             <Box sx={{ display: "flex", flexDirection: "column", gap: 0 }}>
               <Typography variant="subtitle2" sx={{ fontWeight: "bold" }}>
-                {chain.name}
+                {chain.info.name}
               </Typography>
               <Typography
                 variant="caption"
@@ -58,24 +58,30 @@ export default function ChainList({
                   lineHeight: 1.2,
                 }}
               >
-                {chain.description?.split(/[,.!]/)[0] || ""}
+                {chain.info.description?.split(/[,.!]/)[0] || ""}
               </Typography>
             </Box>
           </Box>
-          <Box
-            sx={{
-              bgcolor: "warning.main",
-              borderRadius: 1,
-              minWidth: 52,
-              py: 0.2,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Typography variant="body2" color="black" sx={{ fontSize: "0.8rem" }}>
-              {memberships[chain.uuid]?.balance || 0}
+
+          <Box sx={{ display: "flex", flexDirection: "row", gap: 5, alignItems: "center" }}>
+            <Typography variant="caption" color="text.secondary">
+              {chain.stats.price} AC / token
             </Typography>
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "end",
+                width: 60,
+              }}
+            >
+              <Typography variant="body2" color="white">
+                {memberships[chain.info.uuid]?.tokens || 0}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                AC {((memberships[chain.info.uuid]?.tokens || 0) * chain.stats.price).toFixed(2)}
+              </Typography>
+            </Box>
           </Box>
         </Box>
       ))}

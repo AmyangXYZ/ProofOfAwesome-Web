@@ -4,22 +4,22 @@ import { Socket } from "@/awesome/api"
 import { User } from "@/awesome/user"
 import UserEntry from "@/components/UserEntry"
 import Dashboard from "@/components/Dashboard"
-import { DashboardSharp, ExploreOutlined, GitHub, Notifications, Person, SyncAlt } from "@mui/icons-material"
+import Market from "@/components/Market"
+import { DashboardSharp, ExploreOutlined, GitHub, Notifications, Person, Storefront } from "@mui/icons-material"
 import { Box, IconButton, Link, Stack, Tab, Tabs } from "@mui/material"
 import { useEffect, useState } from "react"
 import { io } from "socket.io-client"
 import ChainExplorer from "@/components/ChainExplorer"
-import Trade from "@/components/Trade"
 
 export default function Demo() {
   const [user, setUser] = useState<User | null>(null)
   const [socket, setSocket] = useState<Socket | null>(null)
   const [isOnboarded, setIsOnboarded] = useState<boolean>(false)
-  const [currentView, setCurrentView] = useState<"dashboard" | "chainExplorer" | "trade">("dashboard")
+  const [currentView, setCurrentView] = useState<"dashboard" | "chainExplorer" | "market">("dashboard")
 
   useEffect(() => {
-    const socket = io("https://api.proof-of-awesome.app")
-    // const socket = io("http://localhost:3000")
+    // const socket = io("https://api.proof-of-awesome.app")
+    const socket = io("http://localhost:3000")
     setSocket(socket)
     socket.on("connect", () => {})
     socket.on("connect_error", () => {
@@ -76,7 +76,7 @@ export default function Demo() {
                 pointerEvents: currentView === "dashboard" ? "auto" : "none",
               }}
             >
-              <Dashboard socket={socket} user={user} setCurrentView={setCurrentView} />
+              <Dashboard socket={socket} user={user} />
             </Box>
             <Box
               sx={{
@@ -90,11 +90,11 @@ export default function Demo() {
             <Box
               sx={{
                 position: "absolute",
-                opacity: currentView === "trade" ? 1 : 0,
-                pointerEvents: currentView === "trade" ? "auto" : "none",
+                opacity: currentView === "market" ? 1 : 0,
+                pointerEvents: currentView === "market" ? "auto" : "none",
               }}
             >
-              <Trade />
+              <Market />
             </Box>
           </Box>
           <Box
@@ -121,7 +121,7 @@ export default function Demo() {
             >
               <Tab value="dashboard" icon={<DashboardSharp />} sx={{ "&.Mui-selected": { color: "white" } }} />
               <Tab value="chainExplorer" icon={<ExploreOutlined />} sx={{ "&.Mui-selected": { color: "white" } }} />
-              <Tab value="trade" icon={<SyncAlt />} sx={{ "&.Mui-selected": { color: "white" } }} />
+              <Tab value="market" icon={<Storefront />} sx={{ "&.Mui-selected": { color: "white" } }} />
             </Tabs>
           </Box>
         </Box>

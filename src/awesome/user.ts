@@ -3,21 +3,25 @@ import { BIP32Factory, BIP32Interface } from "bip32"
 import * as ecc from "tiny-secp256k1"
 import { sha256 } from "js-sha256"
 import { Buffer } from "buffer"
-import { Achievement, AchievementVerificationResult, Block, ChainHead, ChainInfo, Membership } from "./api"
+import { Achievement, Review, Block, ChainHead, ChainInfo, Membership, ChainStats, ChainBrief } from "./api"
 
 export class User {
   private _mnemonic: string
   private _passphrase: string
   private _publicKey: string = ""
+  private _netWorth: number = 0
+  private _cashBalance: number = 0
+  private _tokenValue: number = 0
   private wallet: BIP32Interface | null = null
   private chains: Record<string, ChainInfo> = {}
   private chainHeads: Record<string, ChainHead> = {}
+  private chainStats: Record<string, ChainStats> = {}
   private blocks: Record<string, Block[]> = {}
   private memberships: Record<string, Membership> = {}
   private achievements: Record<string, Achievement> = {}
-  private achievementVerificationResults: Record<string, AchievementVerificationResult> = {}
+  private reviews: Record<string, Review[]> = {}
 
-  constructor( mnemonic: string, passphrase: string) {
+  constructor(mnemonic: string, passphrase: string) {
     this._mnemonic = mnemonic
     this._passphrase = passphrase
   }
@@ -31,33 +35,43 @@ export class User {
     return true
   }
 
-
   get publicKey(): string {
     return this._publicKey
   }
 
-  get totalBalance(): number {
-    return Object.values(this.memberships).reduce((acc, membership) => acc + membership.balance, 0)
+  get netWorth(): number {
+    return this._netWorth
+  }
+
+  get cashBalance(): number {
+    return this._cashBalance
+  }
+
+  get tokenValue(): number {
+    return this._tokenValue
   }
 
   public addAchievement(achievement: Achievement) {
-    this.achievements[achievement.hash] = achievement
+    this.achievements[achievement.signature] = achievement
   }
 
   public getAchievement(signature: string): Achievement | null {
-    return this.achievements[signature] || null
+    return this.achievements[signature]
   }
 
   public getAchievements(): Achievement[] {
     return Object.values(this.achievements).sort((a, b) => b.timestamp - a.timestamp)
   }
 
-  public addAchievementVerificationResult(result: AchievementVerificationResult) {
-    this.achievementVerificationResults[result.achievementHash] = result
+  public addReview(review: Review) {
+    if (!this.reviews[review.achievementSignature]) {
+      this.reviews[review.achievementSignature] = []
+    }
+    this.reviews[review.achievementSignature].push(review)
   }
 
-  public getAchievementVerificationResult(achievementHash: string): AchievementVerificationResult | null {
-    return this.achievementVerificationResults[achievementHash] || null
+  public getReview(signature: string): Review[] {
+    return this.reviews[signature] ?? []
   }
 
   public deriveAddress(chainUuid: string): string {
@@ -80,14 +94,29 @@ export class User {
 
   public setMembership(membership: Membership): void {
     this.memberships[membership.chainUuid] = membership
+    this._tokenValue = Object.values(this.memberships).reduce(
+      (acc, membership) => acc + membership.tokens * this.chainStats[membership.chainUuid].price,
+      0
+    )
+    this._netWorth = this._cashBalance + this._tokenValue
   }
 
   public setChain(chain: ChainInfo): void {
     this.chains[chain.uuid] = chain
   }
 
-  public getChains(): ChainInfo[] {
-    return Object.values(this.chains).map((chain) => chain)
+  public setChainBrief(chainBrief: ChainBrief): void {
+    this.chains[chainBrief.info.uuid] = chainBrief.info
+    this.chainHeads[chainBrief.info.uuid] = chainBrief.head
+    this.chainStats[chainBrief.info.uuid] = chainBrief.stats
+  }
+
+  public getChains(): ChainBrief[] {
+    return Object.values(this.chains).map((chain) => ({
+      info: chain,
+      head: this.chainHeads[chain.uuid],
+      stats: this.chainStats[chain.uuid],
+    }))
   }
   public getChainHead(chainUuid: string): ChainHead {
     return this.chainHeads[chainUuid]
@@ -100,8 +129,9 @@ export class User {
   public createBlock(chainUuid: string, achievement: Achievement): Block | null {
     if (
       !this.chains[chainUuid] ||
-      !this.achievements[achievement.hash] ||
-      !this.getAchievementVerificationResult(achievement.hash)
+      !this.achievements[achievement.signature] ||
+      this.getReview(achievement.signature).length === 0 ||
+      this.getReview(achievement.signature).some((review) => review.reward <= 0)
     ) {
       return null
     }
@@ -115,7 +145,7 @@ export class User {
       previousHash: chainHead.latestBlockHash,
       transactions: [],
       merkleRoot: "",
-      achievement: achievement.hash,
+      achievement: achievement.signature,
       timestamp: Date.now(),
       hash: "",
     } satisfies Block
