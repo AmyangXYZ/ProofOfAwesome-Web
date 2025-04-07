@@ -1,0 +1,37 @@
+                    GNU AFFERO GENERAL PUBLIC LICENSE
+                       Version 3, 19 November 2007
+
+Copyright (C) 2025 Proof of Awesome - Demo Website
+
+This license applies ONLY to the demo website codebase. The Proof of Awesome server, iOS client,
+and other components are proprietary software and are NOT covered by this license.
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+Additional Terms:
+
+As per Section 7 of AGPLv3, the following additional terms are added:
+
+1. Attribution Requirement:
+   Any modified versions must carry prominent notices stating that you modified it, and giving a relevant date.
+
+2. Scope Clarification:
+   This license explicitly applies only to the demo website portion of the Proof of Awesome project.
+   The Proof of Awesome server implementation, iOS client, and any other proprietary components
+   are NOT covered by this license and remain proprietary software.
+
+3. Network Use Notice:
+   If you modify this program and enable access to its interface over a network,
+   you must provide network users with access to the Corresponding Source
+   of your version, as required by the GNU Affero General Public License.

@@ -3,6 +3,7 @@ import { AppRouterCacheProvider } from "@mui/material-nextjs/v15-appRouter"
 import { ThemeProvider } from "@mui/material/styles"
 import { Roboto } from "next/font/google"
 import theme from "./theme"
+import { Analytics } from "@vercel/analytics/next"
 
 const roboto = Roboto({
   weight: ["300", "400", "500", "700"],
@@ -60,6 +61,7 @@ export default function RootLayout({
         <AppRouterCacheProvider>
           <ThemeProvider theme={theme}>{children}</ThemeProvider>
         </AppRouterCacheProvider>
+        <Analytics />
       </body>
     </html>
   )

@@ -177,4 +177,17 @@ Built using a modern tech stack:
 - Comprehensive marketplace with order matching
 - Enhanced community governance tools
 
+## 📄 License
+
+This demo website is licensed under the GNU Affero General Public License v3 (AGPL-3.0) - see the [LICENSE](LICENSE) file for details.
+
+The AGPL-3.0 License was chosen to:
+
+- Ensure modifications and improvements remain open source
+- Require network service providers to share their changes
+- Protect the innovative features of the demo
+- Promote transparency and community collaboration
+
+Note: This license applies only to the demo website. The Proof of Awesome server, iOS client, and other components are proprietary software.
+
 ---
