@@ -129,6 +129,7 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
         for (const brief of chainBriefs) {
           user.setChainBrief(brief)
           socket.emit("join chain", brief.info.uuid, user.deriveAddress(brief.info.uuid))
+          socket.emit("get blocks", brief.info.uuid, brief.head.latestBlockHeight - 3, brief.head.latestBlockHeight)
         }
       }
     })
@@ -151,6 +152,7 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
     socket.on("achievement review", (review: Review) => {
       setWaitingVerification(false)
       setReview(review)
+      user.addReview(review)
       if (review.reward > 0) {
         const achievement = user.getAchievement(review.achievement)
         if (achievement) {
