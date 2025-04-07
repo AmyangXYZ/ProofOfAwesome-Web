@@ -65,7 +65,7 @@ export default function ChainList({
 
           <Box sx={{ display: "flex", flexDirection: "row", gap: 5, alignItems: "center" }}>
             <Typography variant="caption" color="text.secondary">
-              {chain.stats.price} AC / token
+              {chain.stats.midPrice} AC / token
             </Typography>
             <Box
               sx={{
@@ -79,7 +79,7 @@ export default function ChainList({
                 {memberships[chain.info.uuid]?.tokens || 0}
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                AC {((memberships[chain.info.uuid]?.tokens || 0) * chain.stats.price).toFixed(2)}
+                AC {((memberships[chain.info.uuid]?.tokens || 0) * chain.stats.midPrice).toFixed(2)}
               </Typography>
             </Box>
           </Box>

@@ -24,7 +24,7 @@ import {
   VisibilityOff,
 } from "@mui/icons-material"
 import { User } from "@/awesome/user"
-import { Socket } from "@/awesome/api"
+import { Socket, ZeroProof } from "@/awesome/api"
 import View from "@/components/View"
 
 export default function UserEntry({
@@ -47,6 +47,11 @@ export default function UserEntry({
   const userRef = useRef<User | null>(null)
 
   useEffect(() => {
+    socket.on("zero", (zeroProof: ZeroProof) => {
+      if (!User.verifyZeroProof(zeroProof)) {
+        setError("Invalid server zero proof")
+      }
+    })
     socket.on("register success", () => {
       setUser(userRef.current)
       userRef.current = null
@@ -65,6 +70,7 @@ export default function UserEntry({
     })
 
     return () => {
+      socket.off("zero")
       socket.off("register success")
       socket.off("sign in success")
     }
@@ -101,7 +107,7 @@ export default function UserEntry({
         return
       }
       userRef.current = user
-      socket.emit("register", user.publicKey)
+      socket.emit("register", user.createServerZeroProof())
     } else {
       const user = new User(inputMnemonic, passphrase)
       if (!user.createWallet()) {

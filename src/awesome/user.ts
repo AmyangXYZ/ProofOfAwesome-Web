@@ -3,7 +3,7 @@ import { BIP32Factory, BIP32Interface } from "bip32"
 import * as ecc from "tiny-secp256k1"
 import { sha256 } from "js-sha256"
 import { Buffer } from "buffer"
-import { Achievement, Review, Block, ChainHead, ChainInfo, Membership, ChainStats, ChainBrief } from "./api"
+import { Achievement, Review, Block, ChainHead, ChainInfo, Membership, ChainStats, ChainBrief, ZeroProof } from "./api"
 
 export class User {
   private _mnemonic: string
@@ -64,10 +64,10 @@ export class User {
   }
 
   public addReview(review: Review) {
-    if (!this.reviews[review.achievementSignature]) {
-      this.reviews[review.achievementSignature] = []
+    if (!this.reviews[review.achievement]) {
+      this.reviews[review.achievement] = []
     }
-    this.reviews[review.achievementSignature].push(review)
+    this.reviews[review.achievement].push(review)
   }
 
   public getReview(signature: string): Review[] {
@@ -95,7 +95,7 @@ export class User {
   public setMembership(membership: Membership): void {
     this.memberships[membership.chainUuid] = membership
     this._tokenValue = Object.values(this.memberships).reduce(
-      (acc, membership) => acc + membership.tokens * this.chainStats[membership.chainUuid].price,
+      (acc, membership) => acc + membership.tokens * this.chainStats[membership.chainUuid].midPrice,
       0
     )
     this._netWorth = this._cashBalance + this._tokenValue
@@ -173,5 +173,52 @@ export class User {
       return []
     }
     return this.blocks[chainUuid].slice(-count)
+  }
+
+  public createServerZeroProof(): ZeroProof {
+    if (!this.wallet) {
+      throw new Error("Wallet not created")
+    }
+    const zeroProof = {
+      publicKey: this.publicKey,
+      message: "Proof of Awesome Web Client",
+      timestamp: Date.now(),
+      signature: "",
+    } satisfies ZeroProof
+
+    const messageHash = sha256([zeroProof.publicKey, zeroProof.message, zeroProof.timestamp.toString()].join("_"))
+    zeroProof.signature = Buffer.from(this.wallet.sign(Buffer.from(messageHash, "hex"))).toString("hex")
+
+    const verified = ecc.verify(
+      Buffer.from(messageHash, "hex"),
+      Buffer.from(zeroProof.publicKey, "hex"),
+      Buffer.from(zeroProof.signature, "hex")
+    )
+    if (!verified) {
+      throw new Error("ZeroProof self-validation failed")
+    }
+    return zeroProof
+  }
+
+  public static verifyZeroProof(zeroProof: ZeroProof): boolean {
+    try {
+      if (!zeroProof.publicKey || !/^(02|03)[0-9a-f]{64}$/i.test(zeroProof.publicKey)) {
+        return false
+      }
+
+      const messageHash = sha256([zeroProof.publicKey, zeroProof.message, zeroProof.timestamp.toString()].join("_"))
+      const verified = ecc.verify(
+        Buffer.from(messageHash, "hex"),
+        Buffer.from(zeroProof.publicKey, "hex"),
+        Buffer.from(zeroProof.signature, "hex")
+      )
+      if (!verified) {
+        return false
+      }
+      return true
+    } catch (error) {
+      console.error("ZeroProof verification failed", error)
+      return false
+    }
   }
 }

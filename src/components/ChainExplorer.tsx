@@ -91,9 +91,7 @@ export default function ChainExplorer({ user }: { user: User | null }) {
                       Market Cap
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      {brief.stats.marketCap * brief.stats.price} AC ({brief.stats.marketCap} tokens,{" "}
-                      {brief.stats.price}
-                      AC / token)
+                      {brief.stats.marketCap} AC ({brief.stats.marketCap} tokens, {brief.stats.midPrice} AC / token)
                     </Typography>
                     <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
                       Latest block

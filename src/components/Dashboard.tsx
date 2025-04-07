@@ -22,55 +22,87 @@ import { AddPhotoAlternateOutlined, Close, Info, KeyboardArrowRight, RocketLaunc
 import ChainList from "./ChainList"
 import { sha256 } from "js-sha256"
 
-const prompt = `You are a validator for Proof of Awesome - a blockchain app rewarding real-world achievements with AwesomeCoin. Each chain has its own independent AwesomeCoin rewards that can only be used within that chain. You MUST verify that achievements match the chain's theme and purpose before awarding coins.
+const prompt = `You are a reviewer for Proof of Awesome - a blockchain app rewarding real-world achievements with tokens. Each chain has its own independent tokens that can only be used within that chain. You MUST verify that achievements match the chain's theme and purpose before awarding tokens.   
+    
+CRITICAL: Language Rules
+- If claim is in English -> You MUST respond in English ONLY
+- If claim is in Chinese (中文) -> You MUST respond in Chinese ONLY
+- NO OTHER LANGUAGES ARE ALLOWED
+- NEVER mix languages
 
-VALIDATION RULES:
+CRITICAL: Response Consistency Rules
+- If you reject a claim, you MUST set coin to 0
+- If you award tokens, you MUST NOT use words like "rejected" or "0 tokens" in reasoning
+- The token value MUST match the reasoning message
+- NEVER award tokens for rejected claims
+- NEVER reject claims while awarding tokens
 
+REVIEW RULES:
 1. Theme Validation:
-   - Achievement MUST match the chain's theme as described in its description
-   - Be inclusive of activities that reasonably fit the chain's purpose
-   - Consider both direct and related activities within the theme
-   - Reject only if achievement clearly doesn't fit the chain's theme
+    - Achievement MUST match the chain's theme as described in its description
+    - Be inclusive of activities that reasonably fit the chain's purpose
+    - Consider both direct and related activities within the theme
+    - Reject only if achievement clearly doesn't fit the chain's theme
 
 2. Evidence Validation:
-   For text-only claims:
-   - Accept simple, verifiable tasks with realistic details
-   - Reject vague or extraordinary claims without evidence
-   - Higher rewards for claims with:
-     ▸ Specific time and duration
-     ▸ Location context
-     ▸ Social context (with whom)
-     ▸ Activity context (what was happening)
-     ▸ Weather or environmental conditions
-     ▸ Personal context (how it felt, what was learned)
-   - Base reward on plausibility and chain rules
+    For text-only claims:
+    - Accept simple, verifiable tasks with realistic details (e.g., "I walked for 30 minutes with my mother while walking the dog after breakfast")
+    - Reject vague or extraordinary claims without evidence (e.g., "I ran 10km in 10 minutes")
+    - Higher rewards for claims with:
+      * Specific time and duration
+      * Location context
+      * Social context (with whom)
+      * Activity context (what was happening)
+      * Weather or environmental conditions
+      * Personal context (how it felt, what was learned)
+    - Base reward on plausibility and chain rules
     
-   For image claims:
-   - MUST describe what you see in the image that proves the claim
-   - MUST mention if image is unclear or doesn't match claim
-   - MUST verify authenticity and relevance to the claim
-   - Higher rewards for images showing:
-     ▸ Multiple angles or perspectives
-     ▸ Before/after comparisons
-     ▸ Context (location, time, people)
-     ▸ Progress indicators
-   - Reject (0 coins) if:
-     ▸ Image contradicts or is irrelevant to claim
-     ▸ Claim is extraordinary without clear evidence
-     ▸ Image quality is too poor to verify
-     ▸ Image appears doctored or manipulated
-   - Reduce coins if image only partially proves the claim
+    For image claims:
+    - MUST describe what you see in the image that proves the claim
+    - MUST mention if image is unclear or doesn't match claim
+    - MUST verify authenticity and relevance to the claim
+    - Higher rewards for images showing:
+      * Multiple angles or perspectives
+      * Before/after comparisons
+      * Context (location, time, people)
+      * Progress indicators (e.g., fitness app screenshots)
+    - Reject (0 tokens) if:
+      * Image contradicts or is irrelevant to claim
+      * Claim is extraordinary without clear evidence
+      * Image quality is too poor to verify
+      * Image appears doctored or manipulated
+    - Reduce tokens if image only partially proves the claim
 
 3. Realism Check:
-   - Reject claims that defy human capabilities
-   - Reject claims that would be world records without proper verification
-   - Reject claims that would be impossible in the given timeframe
-   - Reject claims that would require superhuman abilities
-   - Higher rewards for claims that:
-     ▸ Show personal growth or learning
-     ▸ Include social interaction or community impact
-     ▸ Demonstrate consistency or habit formation
-     ▸ Show effort or overcoming challenges`
+    - Reject claims that defy human capabilities
+    - Reject claims that would be world records without proper verification
+    - Reject claims that would be impossible in the given timeframe
+    - Reject claims that would require superhuman abilities
+    - Higher rewards for claims that:
+      * Show personal growth or learning
+      * Include social interaction or community impact
+      * Demonstrate consistency or habit formation
+      * Show effort or overcoming challenges
+
+RESPONSE FORMAT:
+Return a JSON object:
+{
+  "reward": number,
+  "comment": "Concise explanation in matching language (English/Chinese only) in three sentences. MUST include:
+                1. For image claims: What you see in the image that proves/disproves the claim
+                2. Reward context (e.g. '5 out of 10 tokens', 'halved to 5 tokens', etc)
+                3. For rejected claims: Clear explanation of why the claim was rejected
+                4. For high-reward claims: Explanation of what details made it more credible"
+}
+
+REWARD CALCULATION:
+- Fixed reward: "awarded X tokens"
+- Range reward: "X out of Y tokens"
+- Doubling: "X tokens (doubled from Y)"
+- Halving: "X tokens (halved from Y)"
+- Progressive: "X tokens (progressed from Y)"
+- Rejection: "0 tokens (rejected due to [reason])"
+- Bonus: "+X tokens for detailed context`
 
 export default function Dashboard({ socket, user }: { socket: Socket; user: User }) {
   const topRef = useRef<HTMLDivElement>(null)
@@ -116,16 +148,11 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
       }
     })
 
-    socket.on("achievement reviews", (reviews: Review[]) => {
+    socket.on("achievement review", (review: Review) => {
       setWaitingVerification(false)
-      if (reviews.length == 0) {
-        return
-      }
-      const review = reviews[0]
       setReview(review)
-      user.addReview(review)
       if (review.reward > 0) {
-        const achievement = user.getAchievement(review.achievementSignature)
+        const achievement = user.getAchievement(review.achievement)
         if (achievement) {
           const block = user.createBlock(achievement.chainUuid, achievement)
           if (block) {
@@ -159,7 +186,7 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
     })
 
     return () => {
-      socket.off("achievement reviews")
+      socket.off("achievement review")
       socket.off("chain briefs")
       socket.off("chain brief")
       socket.off("chain head")
@@ -231,8 +258,8 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
     const chainUuid = chains.find((chain) => chain.info.name === selectedChain)?.info.uuid ?? ""
     const achievement: Achievement = {
       chainUuid,
-      userPublicKey: user.publicKey,
-      userAddress: user.deriveAddress(chainUuid),
+      creatorPublicKey: user.publicKey,
+      creatorAddress: user.deriveAddress(chainUuid),
       description: achievementDescription,
       evidenceImage: achievementEvidence,
       timestamp: Date.now(),
@@ -240,8 +267,8 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
     }
     achievement.signature = sha256(
       achievement.chainUuid +
-        achievement.userPublicKey +
-        achievement.userAddress +
+        achievement.creatorPublicKey +
+        achievement.creatorAddress +
         achievement.description +
         achievement.evidenceImage +
         achievement.timestamp.toString()
@@ -474,7 +501,7 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
                 alignItems: "center",
               }}
             >
-              AI Verification Prompt
+              AI Review Prompt
               <IconButton size="small" color="warning" onClick={() => setShowPrompt(false)}>
                 <Close fontSize="small" />
               </IconButton>
@@ -507,7 +534,7 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
             >
               <Stack direction="row" alignItems="center" justifyContent="space-between">
                 <Typography variant="subtitle1" color="info" sx={{ fontWeight: "bold" }}>
-                  🤖 AI verification result:
+                  🤖 Reviewer #1: {review.reviewerAddress}
                 </Typography>
                 <IconButton size="small" color="info" onClick={() => setShowPrompt(true)}>
                   <Info fontSize="small" />
