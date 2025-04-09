@@ -63,14 +63,15 @@ export class User {
     return Object.values(this.achievements).sort((a, b) => b.timestamp - a.timestamp)
   }
 
-  public addReview(review: Review) {
-    if (!this.reviews[review.achievement]) {
-      this.reviews[review.achievement] = []
+  public addReviews(reviews: Review[]) {
+    if (!reviews.length) {
+      return
     }
-    this.reviews[review.achievement].push(review)
+
+    this.reviews[reviews[0].achievement] = reviews
   }
 
-  public getReview(signature: string): Review[] {
+  public getReviews(signature: string): Review[] {
     return this.reviews[signature] ?? []
   }
 
@@ -130,8 +131,8 @@ export class User {
     if (
       !this.chains[chainUuid] ||
       !this.achievements[achievement.signature] ||
-      this.getReview(achievement.signature).length === 0 ||
-      this.getReview(achievement.signature).some((review) => review.reward <= 0)
+      this.getReviews(achievement.signature).length === 0 ||
+      this.getReviews(achievement.signature).reduce((acc, review) => acc + review.reward, 0) <= 0
     ) {
       return null
     }

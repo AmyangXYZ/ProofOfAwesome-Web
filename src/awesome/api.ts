@@ -90,6 +90,7 @@ export interface Review {
   achievement: string
   reviewerPublicKey: string
   reviewerAddress: string
+  score: number
   comment: string
   reward: number
   timestamp: number

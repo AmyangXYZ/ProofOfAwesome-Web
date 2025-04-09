@@ -104,6 +104,14 @@ REWARD CALCULATION:
 - Rejection: "0 tokens (rejected due to [reason])"
 - Bonus: "+X tokens for detailed context`
 
+const reviewScores = {
+  1: "Reject",
+  2: "Weak Reject",
+  3: "Weak Accept",
+  4: "Accept",
+  5: "Strong Accept",
+} as const
+
 export default function Dashboard({ socket, user }: { socket: Socket; user: User }) {
   const topRef = useRef<HTMLDivElement>(null)
   const [chains, setChains] = useState<ChainBrief[]>([])
@@ -111,15 +119,14 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
   const achievementInputRef = useRef<HTMLInputElement>(null)
   const [selectedChain, setSelectedChain] = useState<string>("")
   const [achievementEvidence, setAchievementEvidence] = useState<string>("")
-  const [review, setReview] = useState<Review | null>(null)
-  const reviewDomRef = useRef<HTMLDivElement>(null)
+  const [reviews, setReviews] = useState<Review[]>([])
+  const [achievmentAccepted, setAchievmentAccepted] = useState<boolean>(false)
   const [waitingVerification, setWaitingVerification] = useState<boolean>(false)
   const [showPrompt, setShowPrompt] = useState<boolean>(false)
   const [netWorth, setNetWorth] = useState<number>(0)
   const [memberships, setMemberships] = useState<Record<string, Membership>>({})
   const [blocks, setBlocks] = useState<Block[]>([])
   const currentBlockRef = useRef<Block | null>(null)
-  const [aiMessageAnimationDuration, setAiMessageAnimationDuration] = useState<number>(0.5)
 
   useEffect(() => {
     socket.on("chain briefs", (chainBriefs: ChainBrief[]) => {
@@ -149,12 +156,18 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
       }
     })
 
-    socket.on("achievement review", (review: Review) => {
+    socket.on("achievement reviews", (reviews: Review[]) => {
       setWaitingVerification(false)
-      setReview(review)
-      user.addReview(review)
-      if (review.reward > 0) {
-        const achievement = user.getAchievement(review.achievement)
+      setReviews(reviews)
+      console.log("reviews", reviews)
+      user.addReviews(reviews)
+      if (!reviews.length) {
+        return
+      }
+      const averageScore = reviews.reduce((acc, review) => acc + review.reward, 0) / reviews.length
+      if (averageScore > 0) {
+        setAchievmentAccepted(true)
+        const achievement = user.getAchievement(reviews[0].achievement)
         if (achievement) {
           const block = user.createBlock(achievement.chainUuid, achievement)
           if (block) {
@@ -188,7 +201,7 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
     })
 
     return () => {
-      socket.off("achievement review")
+      socket.off("achievement reviews")
       socket.off("chain briefs")
       socket.off("chain brief")
       socket.off("chain head")
@@ -254,7 +267,7 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
   }
 
   const submitAchievement = () => {
-    setReview(null)
+    setReviews([])
     setWaitingVerification(true)
     setBlocks([])
     const chainUuid = chains.find((chain) => chain.info.name === selectedChain)?.info.uuid ?? ""
@@ -278,22 +291,6 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
     user.addAchievement(achievement)
     socket.emit("new achievement", achievement)
   }
-
-  useEffect(() => {
-    if (review && reviewDomRef.current) {
-      const wordCount = review.comment.split(" ").length
-      const baseDelay = 0.5 // Initial delay
-      const wordDelay = 0.05 // Delay per word
-      const buffer = 0.5 // Buffer time after last word
-      const totalDuration = baseDelay + wordCount * wordDelay + buffer
-      setAiMessageAnimationDuration(totalDuration)
-
-      reviewDomRef.current?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      })
-    }
-  }, [review])
 
   return (
     <View
@@ -617,69 +614,56 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
             </DialogContent>
           </Dialog>
 
-          {review && (
-            <Box
-              ref={reviewDomRef}
-              sx={{
-                width: "100%",
-              }}
-            >
-              <Stack direction="row" alignItems="center" justifyContent="space-between">
-                <Typography variant="subtitle1" color="info" sx={{ fontWeight: "bold" }}>
-                  🤖 Reviewer #1: {review.reviewerAddress}
+          {reviews.length > 0 && (
+            <>
+              <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ width: "100%" }}>
+                <Typography variant="subtitle1" color="warning.main" sx={{ fontWeight: "bold" }}>
+                  AI Reviews Result:{" "}
+                  {
+                    reviewScores[
+                      (reviews
+                        .map((r) => r.score)
+                        .sort(
+                          (a, b) =>
+                            reviews.filter((r) => r.score === b).length - reviews.filter((r) => r.score === a).length
+                        )[0] || 3) as keyof typeof reviewScores
+                    ]
+                  }
                 </Typography>
                 <IconButton size="small" color="info" onClick={() => setShowPrompt(true)}>
                   <Info fontSize="small" />
                 </IconButton>
               </Stack>
+              {reviews.map((review, index) => (
+                <Box
+                  key={index}
+                  sx={{
+                    width: "100%",
+                  }}
+                >
+                  <Stack direction="row" alignItems="center" justifyContent="space-between">
+                    <Typography variant="subtitle1" color="info" sx={{ fontWeight: "bold" }}>
+                      🤖 Reviewer #{index + 1}: {review.reviewerAddress}
+                    </Typography>
+                  </Stack>
 
-              <Typography
-                variant="body2"
-                sx={{
-                  fontWeight: "bold",
-                  opacity: 0,
-                  animation: "appear 1s ease-in-out forwards",
-                  animationDelay: "0.3s",
-                  "@keyframes appear": {
-                    from: {
-                      opacity: 0,
-                    },
-                    to: {
-                      opacity: 1,
-                    },
-                  },
-                }}
-                color={review.reward > 0 ? "success" : "error"}
-                textAlign="start"
-              >
-                {review.reward > 0 ? "✅ " : "❌ "}
-                {review.comment.split(" ").map((word, index) => (
-                  <Box
-                    key={index}
-                    component="span"
+                  <Typography
+                    variant="body2"
                     sx={{
-                      display: "inline-block",
-                      opacity: 0,
-                      mr: "4px",
-                      animation: "typeWord 0.05s ease-in-out forwards",
-                      animationDelay: `${0.5 + index * 0.05}s`,
-                      "@keyframes typeWord": {
-                        from: {
-                          opacity: 0,
-                          transform: "translateY(5px)",
-                        },
-                        to: {
-                          opacity: 1,
-                          transform: "translateY(0)",
-                        },
-                      },
+                      fontWeight: "bold",
                     }}
+                    color={review.reward > 0 ? "success" : "error"}
+                    textAlign="start"
                   >
-                    {word}
-                  </Box>
-                ))}
-              </Typography>
+                    [{reviewScores[review.score as keyof typeof reviewScores]}] {review.comment}
+                  </Typography>
+                </Box>
+              ))}
+            </>
+          )}
 
+          {achievmentAccepted && (
+            <>
               {/* block append animation */}
               {blocks.length > 0 && (
                 <Box
@@ -687,17 +671,7 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
                     display: "flex",
                     flexDirection: "column",
                     gap: 1,
-                    opacity: 0,
-                    animation: "appear 1s ease-in-out forwards",
-                    animationDelay: `${aiMessageAnimationDuration}s`,
-                    "@keyframes appear": {
-                      from: {
-                        opacity: 0,
-                      },
-                      to: {
-                        opacity: 1,
-                      },
-                    },
+                    width: "100%",
                   }}
                 >
                   <Typography variant="subtitle1" color="warning.main" sx={{ fontWeight: "bold" }}>
@@ -713,7 +687,7 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
                       ml: 1,
                       opacity: 0,
                       animation: "appear 0.5s ease-in-out forwards",
-                      animationDelay: `${aiMessageAnimationDuration + 1}s`,
+                      animationDelay: `1s`,
                       "@keyframes appear": {
                         from: {
                           opacity: 0,
@@ -726,7 +700,7 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
                   >
                     {blocks.map((block, index) => (
                       <Box
-                        key={block.hash}
+                        key={index}
                         sx={{
                           display: "flex",
                           flexDirection: "row",
@@ -743,7 +717,7 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
                             ...(index === blocks.length - 1 && {
                               visibility: "hidden",
                               animation: "slideIn 0.5s ease-out 1s forwards",
-                              animationDelay: `${aiMessageAnimationDuration + 1.5}s`,
+                              animationDelay: `${1.5}s`,
                               "@keyframes slideIn": {
                                 "0%": {
                                   visibility: "hidden",
@@ -775,7 +749,7 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
                             ...(index === blocks.length - 1 && {
                               visibility: "hidden",
                               animation: "slideIn 0.5s ease-out 1s forwards",
-                              animationDelay: `${aiMessageAnimationDuration + 2}s`,
+                              animationDelay: `${2}s`,
                               "@keyframes slideIn": {
                                 "0%": {
                                   visibility: "hidden",
@@ -816,7 +790,7 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
                       mb: -4,
                       opacity: 0,
                       animation: blocks.length > 0 ? "fadeIn 0.5s ease-in forwards" : "none",
-                      animationDelay: `${aiMessageAnimationDuration + 3}s`,
+                      animationDelay: `${3}s`,
                       "@keyframes fadeIn": {
                         from: { opacity: 0 },
                         to: { opacity: 1 },
@@ -831,7 +805,7 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
                         // Clear states first
                         setAchievementDescription("")
                         setAchievementEvidence("")
-                        setReview(null)
+                        setReviews([])
                         setBlocks([])
 
                         setTimeout(() => {
@@ -853,7 +827,7 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
                   </Box>
                 </Box>
               )}
-            </Box>
+            </>
           )}
 
           <Box sx={{ mt: 10, width: "100%" }}>
@@ -888,8 +862,8 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
         >
           {waitingVerification ? (
             <Box sx={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 2, fontWeight: "bold" }}>
-              <CircularProgress size={24} color="inherit" />
-              Verifying by AI
+              <CircularProgress size={20} color="inherit" />
+              AI Reviewing...
             </Box>
           ) : (
             <Typography variant="body1" sx={{ fontWeight: "bold" }}>
