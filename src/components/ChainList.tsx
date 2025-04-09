@@ -58,15 +58,16 @@ export default function ChainList({
                   lineHeight: 1.2,
                 }}
               >
-                {chain.info.description?.split(/[,.!]/)[0] || ""}
+                {chain.stats.midPrice} AC / token
+                {/* {chain.info.description?.split(/[,.!]/)[0] || ""} */}
               </Typography>
             </Box>
           </Box>
 
           <Box sx={{ display: "flex", flexDirection: "row", gap: 5, alignItems: "center" }}>
-            <Typography variant="caption" color="text.secondary">
-              {chain.stats.midPrice} AC / token
-            </Typography>
+            {/* <Typography variant="caption" color="text.secondary">
+             
+            </Typography> */}
             <Box
               sx={{
                 display: "flex",

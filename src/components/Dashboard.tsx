@@ -304,6 +304,16 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
             ref={topRef}
             sx={{ display: "flex", flexDirection: "column", alignItems: "start", gap: 1, width: "100%" }}
           >
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: "bold",
+                color: "warning.main",
+                mb: -1,
+              }}
+            >
+              AwesomeCoins
+            </Typography>
             <Box
               sx={{
                 display: "flex",
@@ -320,20 +330,10 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
                   color: "warning.main",
                 }}
               >
-                {netWorth}
-              </Typography>
-              <Typography
-                variant="subtitle1"
-                sx={{
-                  fontWeight: "bold",
-                  color: "warning.main",
-                  mb: 0.15,
-                }}
-              >
-                AwesomeCoins
+                {netWorth.toFixed(2)}
               </Typography>
             </Box>
-            <Box sx={{ display: "flex", gap: 1 }}>
+            {/* <Box sx={{ display: "flex", gap: 1 }}>
               <Button
                 variant="contained"
                 size="small"
@@ -390,7 +390,7 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
               >
                 SELL
               </Button>
-            </Box>
+            </Box> */}
           </Box>
 
           <Typography
@@ -400,84 +400,174 @@ export default function Dashboard({ socket, user }: { socket: Socket; user: User
           >
             🎉 I am thrilled to announce that I have 🏆
           </Typography>
-          <TextField
-            inputRef={achievementInputRef}
-            label="Achievement"
-            value={achievementDescription}
-            onChange={(e) => setAchievementDescription(e.target.value)}
-            fullWidth
-            multiline
-          />
-
-          <Box>
-            {achievementEvidence ? (
-              <Box sx={{ position: "relative", display: "flex", justifyContent: "center" }}>
-                <Image
-                  src={achievementEvidence}
-                  alt="Evidence"
-                  width={300}
-                  height={120}
-                  style={{
-                    width: "80%",
-                    height: "auto",
-                    maxHeight: "120px",
-                    objectFit: "contain",
-                  }}
-                  unoptimized
-                />
-                <IconButton
-                  onClick={() => setAchievementEvidence("")}
-                  size="small"
-                  sx={{
-                    position: "absolute",
-                    right: 10,
-                    bgcolor: "background.paper",
-                    "&:hover": { bgcolor: "background.paper" },
-                  }}
-                >
-                  <Close />
-                </IconButton>
-              </Box>
-            ) : (
-              <>
-                <Button
-                  variant="outlined"
-                  color="primary"
-                  onClick={() => document.getElementById("evidence-input")?.click()}
-                  endIcon={<AddPhotoAlternateOutlined sx={{ mb: 0.4 }} />}
-                >
-                  <input
-                    type="file"
-                    accept="image/*"
-                    style={{ display: "none" }}
-                    onChange={handleImageSelect}
-                    id="evidence-input"
-                  />
-                  Evidence
-                </Button>
-              </>
-            )}
-          </Box>
           <Box
             sx={{
-              display: "flex",
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 1,
+              position: "relative",
+              width: "100%",
+              minHeight: 100,
+              borderRadius: 3,
+              border: "1px solid",
+              borderColor: "divider",
+              overflow: "hidden",
+              mb: achievementEvidence ? 2 : 0,
+              bgcolor: "background.paper",
             }}
           >
-            <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
-              <span style={{ position: "relative", top: "-1.5px" }}>@</span>Chain
-            </Typography>
-            <Select size="small" value={selectedChain} onChange={(e) => setSelectedChain(e.target.value)}>
-              {chains.map((chain) => (
-                <MenuItem key={chain.info.uuid} value={chain.info.name} sx={{ fontSize: "0.9rem" }}>
-                  {chain.info.name}
-                </MenuItem>
-              ))}
-            </Select>
+            <TextField
+              fullWidth
+              multiline
+              minRows={1}
+              maxRows={10}
+              value={achievementDescription}
+              onChange={(e) => setAchievementDescription(e.target.value)}
+              placeholder="Ran 2km; cooked dinner; 5 win streak..."
+              variant="standard"
+              sx={{
+                "& .MuiInputBase-root": {
+                  px: 2,
+                  py: 1.5,
+                  pb: 5,
+                },
+                "& .MuiInputBase-input": {
+                  fontSize: "0.9375rem", // Slightly smaller font
+                  lineHeight: 1.5,
+                  color: "#E0E0E0", // Lighter text color
+                },
+                "& .MuiInput-underline:before": {
+                  borderBottom: "none",
+                },
+                "& .MuiInput-underline:after": {
+                  borderBottom: "none",
+                },
+                "& .MuiInput-underline:hover:not(.Mui-disabled):before": {
+                  borderBottom: "none",
+                },
+              }}
+            />
+            <Box
+              sx={{
+                position: "absolute",
+                bottom: 0,
+                left: 0,
+                right: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "4px 6px",
+                bgcolor: "background.paper",
+              }}
+            >
+              <IconButton
+                onClick={() => document.getElementById("evidence-input")?.click()}
+                sx={{
+                  "&:hover": {
+                    backgroundColor: "action.hover",
+                  },
+                }}
+              >
+                <AddPhotoAlternateOutlined fontSize="small" />
+                <input
+                  type="file"
+                  accept="image/*"
+                  style={{ display: "none" }}
+                  onChange={handleImageSelect}
+                  id="evidence-input"
+                />
+              </IconButton>
+
+              <Stack
+                direction="row"
+                // spacing={0.5}
+                alignItems="center"
+                sx={{
+                  cursor: "pointer",
+                  padding: "2px 4px",
+                  borderRadius: 1,
+                  "&:hover": {
+                    backgroundColor: "action.hover",
+                  },
+                }}
+              >
+                <Typography variant="body2" sx={{ fontWeight: "bold", color: "#E0E0E0", mb: 0.35 }}>
+                  @
+                </Typography>
+                <Select
+                  size="small"
+                  value={selectedChain}
+                  onChange={(e) => setSelectedChain(e.target.value)}
+                  sx={{
+                    "& .MuiSelect-select": {
+                      padding: "0px 4px",
+                      fontSize: "0.875rem",
+                      color: "#E0E0E0",
+                    },
+                    "& .MuiOutlinedInput-notchedOutline": {
+                      border: "none",
+                    },
+                    "&:hover .MuiOutlinedInput-notchedOutline": {
+                      border: "none",
+                    },
+                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                      border: "none",
+                    },
+                    "& .MuiSvgIcon-root": {
+                      // Dropdown icon
+                      fontSize: 16,
+                      color: "#E0E0E0",
+                    },
+                  }}
+                >
+                  {chains.map((chain) => (
+                    <MenuItem key={chain.info.uuid} value={chain.info.name} sx={{ fontSize: "0.875rem" }}>
+                      {chain.info.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </Stack>
+            </Box>
           </Box>
+
+          {achievementEvidence && (
+            <Box
+              sx={{
+                position: "relative",
+                display: "flex",
+                justifyContent: "center",
+                height: 80,
+                overflow: "hidden",
+                borderRadius: 1,
+                border: "1px solid",
+                borderColor: "divider",
+              }}
+            >
+              <Image
+                src={achievementEvidence}
+                alt="Evidence"
+                width={300}
+                height={80}
+                style={{
+                  width: "auto",
+                  height: "100%",
+                  objectFit: "contain",
+                }}
+                unoptimized
+              />
+              <IconButton
+                onClick={() => setAchievementEvidence("")}
+                size="small"
+                sx={{
+                  position: "absolute",
+                  right: 8,
+                  top: 8,
+                  bgcolor: "background.paper",
+                  "&:hover": { bgcolor: "background.paper" },
+                }}
+              >
+                <Close sx={{ fontSize: 16 }} />
+              </IconButton>
+            </Box>
+          )}
+
           <Dialog
             onClose={() => setShowPrompt(false)}
             open={showPrompt}

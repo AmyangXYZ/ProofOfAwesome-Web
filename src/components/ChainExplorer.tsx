@@ -67,9 +67,6 @@ export default function ChainExplorer({ user }: { user: User | null }) {
                       <Typography variant="body2" color="text.secondary">
                         {brief.stats.numBlocks} blocks
                       </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {brief.stats.numMembers} members
-                      </Typography>
                     </Box>
                   </Box>
                 </AccordionSummary>
